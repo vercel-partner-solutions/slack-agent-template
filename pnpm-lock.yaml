@@ -11,6 +11,9 @@ importers:
       '@slack/bolt':
         specifier: ^4.4.0
         version: 4.4.0(@types/express@5.0.3)
+      '@slack/web-api':
+        specifier: ^7.9.3
+        version: 7.9.3
       '@vercel/bolt':
         specifier: ^1.0.9
         version: 1.0.9(@slack/bolt@4.4.0(@types/express@5.0.3))

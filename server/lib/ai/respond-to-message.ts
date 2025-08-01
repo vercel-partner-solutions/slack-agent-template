@@ -1,14 +1,14 @@
-import { generateText } from "ai";
+import { generateText, type ModelMessage } from "ai";
 
-export const respondToMessage = async (message: string) => {
+export const respondToMessage = async (messages: ModelMessage[]) => {
   try {
     const { text } = await generateText({
       model: "xai/grok-3",
       prompt: `
       		You are a Slack bot, powered by the xai/grok-3 model.
       		You are a helpful assistant.
-      		Respond to the following message from the user: ${message}
       		`,
+      messages,
     });
 
     return text;

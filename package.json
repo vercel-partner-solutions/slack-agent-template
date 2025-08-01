@@ -21,6 +21,7 @@
   "packageManager": "pnpm@9.15.0",
   "dependencies": {
     "@slack/bolt": "^4.4.0",
+    "@slack/web-api": "^7.9.3",
     "@vercel/bolt": "^1.0.9",
     "ai": "5.0.0"
   }
