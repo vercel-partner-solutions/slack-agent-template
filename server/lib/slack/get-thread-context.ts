@@ -17,11 +17,12 @@ export const getThreadContext = async (
 export const getThreadContextAsModelMessage = async (
   thread_ts: string,
   channel_id: string,
+  botId: string,
 ): Promise<ModelMessage[]> => {
   const messages = await getThreadContext(thread_ts, channel_id);
 
   return messages.map((message) => ({
-    role: message.user === process.env.SLACK_BOT_ID ? "assistant" : "user",
+    role: message.user === botId ? "assistant" : "user",
     content: message.text,
   }));
 };

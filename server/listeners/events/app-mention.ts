@@ -8,26 +8,31 @@ const appMentionCallback = async ({
   event,
   say,
   logger,
+  context,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<"app_mention">) => {
   logger.debug("App mentioned:", JSON.stringify(event, null, 2));
 
-  let context: ModelMessage[] = [];
+  let threadContext: ModelMessage[] = [];
 
   try {
     if ("thread_ts" in event && event.thread_ts) {
-      context = await getThreadContextAsModelMessage(
+      threadContext = await getThreadContextAsModelMessage(
         event.thread_ts,
         event.channel,
+        context.botId,
       );
     } else {
-      context = await getChannelContextAsModelMessage(event.channel);
+      threadContext = await getChannelContextAsModelMessage(
+        event.channel,
+        context.botId,
+      );
     }
   } catch (error) {
     logger.error("Failed to get context, using message as fallback:", error);
-    context = [{ role: "user", content: event.text }];
+    threadContext = [{ role: "user", content: event.text }];
   }
 
-  const response = await respondToMessage(context);
+  const response = await respondToMessage(threadContext);
   await say({
     text: response,
     thread_ts: event.thread_ts || event.ts,
