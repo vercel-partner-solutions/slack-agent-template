@@ -10,6 +10,7 @@ const mpimMessageCallback = async ({
   say,
   logger,
   client,
+  context,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<"message">) => {
   if (
     event.channel_type === "mpim" &&
@@ -18,7 +19,7 @@ const mpimMessageCallback = async ({
   ) {
     logger.debug("MPIM message event received:", event);
 
-    let context: ModelMessage[] = [];
+    let threadContext: ModelMessage[] = [];
 
     try {
       if ("thread_ts" in message && message.thread_ts) {
@@ -28,18 +29,22 @@ const mpimMessageCallback = async ({
           status: "is typing...",
         });
 
-        context = await getThreadContextAsModelMessage(
+        threadContext = await getThreadContextAsModelMessage(
           message.thread_ts,
           message.channel,
+          context.botId,
         );
       } else {
-        context = await getChannelContextAsModelMessage(message.channel);
+        threadContext = await getChannelContextAsModelMessage(
+          message.channel,
+          context.botId,
+        );
       }
     } catch (error) {
       logger.error("Failed to get context, using message as fallback:", error);
-      context = [{ role: "user", content: message.text }];
+      threadContext = [{ role: "user", content: message.text }];
     }
-    const response = await respondToMessage(context);
+    const response = await respondToMessage(threadContext);
 
     await say({
       text: response,

@@ -12,11 +12,12 @@ export const getChannelContext = async (channel_id: string) => {
 
 export const getChannelContextAsModelMessage = async (
   channel_id: string,
+  botId: string,
 ): Promise<ModelMessage[]> => {
   const messages = await getChannelContext(channel_id);
 
   return messages.map((message) => ({
-    role: message.user === process.env.SLACK_BOT_ID ? "assistant" : "user",
+    role: message.user === botId ? "assistant" : "user",
     content: message.text,
   }));
 };
