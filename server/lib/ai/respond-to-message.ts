@@ -58,11 +58,12 @@ export const respondToMessage = async ({
       - New conversation → updateChatTitleTool with a relevant title.
       - Topic change → updateChatTitleTool with a new title.
       - No change → skip.
-      - Never update your status when updating the title. This is an invisible action the user does not need to know about.
+      - Never update your status or inform the user when updating the title. This is an invisible action the user does not need to know about.
 
       5. Responding
       - After fetching context, answer clearly and helpfully.
       - Suggest next steps if needed; avoid unnecessary clarifying questions if tools can answer.
+      - Slack markdown does not support language tags in code blocks.
 
       Message received
         │
