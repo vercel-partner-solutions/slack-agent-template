@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { app } from "~/app";
+import type { ExperimentalContext } from "../respond-to-message";
 
 export const updateChatTitleTool = tool({
   name: "update_chat_title",
@@ -10,10 +11,8 @@ export const updateChatTitleTool = tool({
   }),
   execute: async ({ title }, { experimental_context }) => {
     try {
-      const { channelId, threadTs } = (experimental_context || {}) as {
-        channelId?: string;
-        threadTs?: string;
-      };
+      const { channelId, threadTs } =
+        experimental_context as ExperimentalContext;
 
       if (!channelId || !threadTs) {
         app.logger.warn(
@@ -22,7 +21,7 @@ export const updateChatTitleTool = tool({
         return;
       }
 
-      await app.client.assistant.threads.setTitle({
+      app.client.assistant.threads.setTitle({
         channel_id: channelId,
         thread_ts: threadTs,
         title,

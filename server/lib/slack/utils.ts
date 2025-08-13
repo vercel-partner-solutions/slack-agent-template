@@ -95,11 +95,15 @@ const getThreadContext = async (thread_ts: string, channel_id: string) => {
  * @param {string} botId - The current app's bot ID used to determine message role.
  * @returns {Promise<ModelMessage[]>} Messages formatted for AI model consumption.
  */
-export const getThreadContextAsModelMessage = async (
-  thread_ts: string,
-  channel_id: string,
-  botId: string,
-): Promise<ModelMessage[]> => {
+export const getThreadContextAsModelMessage = async ({
+  thread_ts,
+  channel_id,
+  botId,
+}: {
+  thread_ts: string;
+  channel_id: string;
+  botId: string;
+}): Promise<ModelMessage[]> => {
   const messages = await getThreadContext(thread_ts, channel_id);
 
   return messages.map((message) => ({

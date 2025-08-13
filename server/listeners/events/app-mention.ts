@@ -2,7 +2,6 @@ import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
 import { respondToMessage } from "~/lib/ai/respond-to-message";
 import {
-  getChannelContextAsModelMessage,
   getThreadContextAsModelMessage,
   updateAgentStatus,
 } from "~/lib/slack/utils";
@@ -13,27 +12,37 @@ const appMentionCallback = async ({
   logger,
   context,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<"app_mention">) => {
-  let messages: ModelMessage[] = [];
-
   try {
     const { channel, thread_ts } = event;
 
+    let messages: ModelMessage[] = [];
     if (thread_ts) {
-      await updateAgentStatus({
+      updateAgentStatus({
         channelId: channel,
         threadTs: thread_ts,
         status: "is typing...",
       });
-      messages = await getThreadContextAsModelMessage(
+      messages = await getThreadContextAsModelMessage({
+        channel_id: channel,
         thread_ts,
-        channel,
-        context.botId,
-      );
+        botId: context.botId,
+      });
     } else {
-      messages = await getChannelContextAsModelMessage(channel, context.botId);
+      messages = [
+        {
+          role: "user",
+          content: event.text,
+        },
+      ];
     }
 
-    const response = await respondToMessage({ messages });
+    const response = await respondToMessage({
+      messages,
+      channel,
+      thread_ts,
+      botId: context.botId,
+    });
+
     await say({
       text: response,
       thread_ts: event.thread_ts || event.ts,
