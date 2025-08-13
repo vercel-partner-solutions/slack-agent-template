@@ -64,6 +64,7 @@ export const respondToMessage = async ({
       - After fetching context, answer clearly and helpfully.
       - Suggest next steps if needed; avoid unnecessary clarifying questions if tools can answer.
       - Slack markdown does not support language tags in code blocks.
+      - If your response includes a user's id like U0931KUHGC8, you must tag them. You cannot respond with just the id. You must use the @user_id syntax.
 
       Message received
         │

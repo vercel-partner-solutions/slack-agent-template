@@ -1,4 +1,5 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
+import type { MessageElement } from "@slack/web-api/dist/types/response/ConversationsHistoryResponse";
 import type { ModelMessage } from "ai";
 import { app } from "~/app";
 
@@ -67,6 +68,11 @@ export const updateAgentStatus = async ({
   }
 };
 
+// Extend the ModelMessage type with Slack-specific metadata to identify multiple users in the same thread
+export type SlackUIMessage = ModelMessage & {
+  metadata?: MessageElement;
+};
+
 /**
  * Fetch up to the latest 50 messages from a thread.
  *
@@ -86,14 +92,14 @@ const getThreadContext = async (thread_ts: string, channel_id: string) => {
 };
 
 /**
- * Retrieve a thread's messages and convert them into `ModelMessage[]` for AI processing.
+ * Retrieve a thread's messages and convert them into `SlackUIMessage[]` for AI processing.
  *
  * The role is inferred by comparing each message's `bot_id` with the provided `botId`.
  *
  * @param {string} thread_ts - Timestamp of the root message of the thread.
  * @param {string} channel_id - Channel ID where the thread exists.
  * @param {string} botId - The current app's bot ID used to determine message role.
- * @returns {Promise<ModelMessage[]>} Messages formatted for AI model consumption.
+ * @returns {Promise<SlackUIMessage[]>} Messages formatted for AI model consumption.
  */
 export const getThreadContextAsModelMessage = async ({
   thread_ts,
@@ -103,12 +109,19 @@ export const getThreadContextAsModelMessage = async ({
   thread_ts: string;
   channel_id: string;
   botId: string;
-}): Promise<ModelMessage[]> => {
+}): Promise<SlackUIMessage[]> => {
   const messages = await getThreadContext(thread_ts, channel_id);
 
   return messages.map((message) => ({
     role: message.bot_id === botId ? "assistant" : "user",
     content: message.text,
+    metadata: {
+      user: message.user || null,
+      bot_id: message?.bot_id || null,
+      ts: message.ts,
+      thread_ts: message.thread_ts,
+      type: message.type,
+    },
   }));
 };
 
@@ -129,22 +142,29 @@ const getChannelContext = async (channel_id: string) => {
 };
 
 /**
- * Retrieve recent channel messages and convert them into `ModelMessage[]` for AI processing.
+ * Retrieve recent channel messages and convert them into `SlackUIMessage[]` for AI processing.
  *
  * The role is inferred by comparing each message's `bot_id` with the provided `botId`.
  *
  * @param {string} channel_id - Channel ID to read from.
  * @param {string} botId - The current app's bot ID used to determine message role.
- * @returns {Promise<ModelMessage[]>} Messages formatted for AI model consumption.
+ * @returns {Promise<SlackUIMessage[]>} Messages formatted for AI model consumption.
  */
 export const getChannelContextAsModelMessage = async (
   channel_id: string,
   botId: string,
-): Promise<ModelMessage[]> => {
+): Promise<SlackUIMessage[]> => {
   const messages = await getChannelContext(channel_id);
 
   return messages.map((message) => ({
     role: message.bot_id === botId ? "assistant" : "user",
     content: message.text,
+    metadata: {
+      user: message.user || null,
+      bot_id: message?.bot_id || null,
+      ts: message.ts,
+      thread_ts: message.thread_ts,
+      type: message.type,
+    },
   }));
 };
