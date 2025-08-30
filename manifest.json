@@ -32,6 +32,12 @@
         "url": "https://e2a7270155fd.ngrok-free.app/api/events",
         "description": "Start a voice session with the AI agent",
         "should_escape": false
+      },
+      {
+        "command": "/jarvis",
+        "url": "https://e2a7270155fd.ngrok-free.app/api/events",
+        "description": "Ask Jarvis for help",
+        "should_escape": false
       }
     ],
     "assistant_view": {
