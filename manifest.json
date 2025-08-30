@@ -23,13 +23,13 @@
     "slash_commands": [
       {
         "command": "/sample-command",
-        "url": "https://2803e0a4d693.ngrok.app/api/events",
+        "url": "https://a85d3ddf91f1.ngrok-free.app/api/events",
         "description": "Runs a sample command",
         "should_escape": false
       },
       {
         "command": "/voice",
-        "url": "https://2803e0a4d693.ngrok.app/api/events",
+        "url": "https://a85d3ddf91f1.ngrok-free.app/api/events",
         "description": "Start a voice session with the AI agent",
         "should_escape": false
       }
@@ -54,7 +54,7 @@
   },
   "settings": {
     "event_subscriptions": {
-      "request_url": "https://2803e0a4d693.ngrok.app/api/events",
+      "request_url": "https://a85d3ddf91f1.ngrok-free.app/api/events",
       "bot_events": [
         "app_home_opened",
         "app_mention",
@@ -68,7 +68,7 @@
     },
     "interactivity": {
       "is_enabled": true,
-      "request_url": "https://2803e0a4d693.ngrok.app/api/events"
+      "request_url": "https://a85d3ddf91f1.ngrok-free.app/api/events"
     },
     "org_deploy_enabled": true,
     "socket_mode_enabled": false,
