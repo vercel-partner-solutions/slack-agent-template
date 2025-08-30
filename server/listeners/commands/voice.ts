@@ -40,8 +40,9 @@ export const voiceCommandCallback = async ({
     session.close();
 
     const audioBuffer = pcmToWav(chunks);
-    await client.files.upload({
-      channels: command.channel_id,
+    // Use files.uploadV2 instead of deprecated files.upload
+    await client.files.uploadV2({
+      channel_id: command.channel_id,
       filename: "voice-response.wav",
       file: audioBuffer,
       initial_comment: "Here's your voice response:",
