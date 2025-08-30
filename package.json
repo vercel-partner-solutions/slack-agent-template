@@ -15,6 +15,7 @@
     "lint:fix": "biome check . --write"
   },
   "dependencies": {
+    "@openai/agents": "^0.1.0",
     "@slack/bolt": "^4.4.0",
     "@slack/web-api": "^7.10.0",
     "@vercel/slack-bolt": "latest",
