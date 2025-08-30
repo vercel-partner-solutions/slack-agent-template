@@ -36,7 +36,8 @@ _This command is still a work in progress. We're working with the Slack team to 
 
 #### Environment Setup
 1. Add your `AI_GATEWAY_API_KEY` to your `.env` file. You can get one [here](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys%3Futm_source%3Dai_gateway_landing_page&title=Get+an+API+Key)
-2. _(Optional)_ You can also use your `VERCEL_OIDC_TOKEN ` to authenticate with the Vercel AI Gateway. More info [here](https://vercel.com/docs/oidc#in-local-development)
+2. Add your `OPENAI_API_KEY` to enable voice connections through the OpenAI Realtime API.
+3. _(Optional)_ You can also use your `VERCEL_OIDC_TOKEN ` to authenticate with the Vercel AI Gateway. More info [here](https://vercel.com/docs/oidc#in-local-development)
 
 #### Prepare for Local Development
 
@@ -56,6 +57,7 @@ _This command is still a work in progress. We're working with the Slack team to 
 6. Start your local server with automatic tunneling using the `pnpm dev:tunnel` command. You can also use the generic `slack run` command if you do not want automatic tunneling and manifest updates. If prompted, select the workspace you'd like to grant access to. Select `yes` when asked _Update app settings with changes to the local manifest?_
 
 7. Open your Slack workspace and add your new Slack Agent to a channel. Your Slack Agent should respond whenever it's tagged in a message or sent a DM
+8. Use the `/voice` slash command to create a voice session powered by the OpenAI Realtime API
 
 ## Deploy to Vercel
 1. Create a new Vercel project [here](https://www.vercel.com/new) or select _Add new..._ and _project_ from the Vercel dashboard

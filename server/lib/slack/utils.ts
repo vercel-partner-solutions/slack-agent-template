@@ -121,7 +121,6 @@ export const getChannelContextAsModelMessage = async (
   });
 };
 
-
 export const addReaction = async ({
   channel,
   timestamp,
