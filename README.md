@@ -4,6 +4,8 @@
 
 This is a Slack Agent template built with Bolt for JavaScript (TypeScript) and the Nitro server framework.
 
+For a step-by-step guide to configuring this template in your Slack workspace, see the [Slack Setup Guide](docs/slack-setup.md).
+
 ## Prerequisites
 - **Node.js 22+** - [Download here](https://nodejs.org/)
 - **Slack workspace** - You need a workspace where you have permission to install apps
