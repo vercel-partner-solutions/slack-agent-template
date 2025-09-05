@@ -1,6 +1,5 @@
 export * from "./get-channel-messages";
 export * from "./get-thread-messages";
-export * from "./update-agent-status";
 export * from "./update-chat-title";
 
 import type { KnownEventFromType } from "@slack/bolt";
@@ -10,7 +9,6 @@ import { app } from "~/app";
 export const availableToolsSchema = z.enum([
   "getChannelMessagesTool",
   "getThreadMessagesTool",
-  "updateAgentStatusTool",
   "updateChatTitleTool",
 ]);
 
@@ -46,8 +44,6 @@ export const getActiveTools = (
   if (hasThread) {
     app.logger.debug(`thread_ts detected, adding getThreadMessagesTool`);
     tools.add("getThreadMessagesTool");
-    app.logger.debug(`thread_ts detected, adding updateAgentStatusTool`);
-    tools.add("updateAgentStatusTool");
   }
 
   // Add DM tools

@@ -1,10 +1,11 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type {
+  Block,
   ConversationsHistoryArguments,
   ConversationsRepliesArguments,
 } from "@slack/web-api";
 import type { MessageElement } from "@slack/web-api/dist/types/response/ConversationsHistoryResponse";
-import type { ModelMessage } from "ai";
+import type { ModelMessage, TextStreamPart, ToolSet } from "ai";
 import { app } from "~/app";
 
 /**
@@ -225,4 +226,163 @@ export const MessageState = {
       name: "x",
     });
   },
+};
+
+export type StreamResponse = {
+  ok: boolean;
+  channel: string;
+  ts: string;
+};
+interface StartMessageStreamOptions {
+  channel: string;
+  thread_ts?: string;
+  markdown_text?: string;
+  unfurl_links?: boolean;
+  unfurl_media?: boolean;
+}
+
+export const startMessageStream = async ({
+  channel,
+  thread_ts,
+  markdown_text,
+  unfurl_links,
+  unfurl_media,
+}: StartMessageStreamOptions) => {
+  return (await app.client.apiCall("chat.startStream", {
+    channel,
+    thread_ts,
+    markdown_text,
+    unfurl_links,
+    unfurl_media,
+  })) as unknown as Promise<StreamResponse>;
+};
+
+interface AppendMessageStreamOptions {
+  channel: string;
+  ts: string;
+  markdown_text: string;
+}
+
+export const appendMessageStream = async ({
+  channel,
+  ts,
+  markdown_text,
+}: AppendMessageStreamOptions) => {
+  return (await app.client.apiCall("chat.appendStream", {
+    channel,
+    ts,
+    markdown_text,
+  })) as unknown as Promise<StreamResponse>;
+};
+
+interface EndMessageStreamOptions {
+  channel: string;
+  ts: string;
+  markdown_text?: string;
+  blocks?: Block[];
+}
+
+export const endMessageStream = async ({
+  channel,
+  ts,
+  markdown_text,
+  blocks,
+}: EndMessageStreamOptions) => {
+  return (await app.client.apiCall("chat.stopStream", {
+    channel,
+    ts,
+    markdown_text,
+    blocks,
+  })) as unknown as Promise<StreamResponse>;
+};
+
+type StatusEventMap = Record<
+  TextStreamPart<ToolSet>["type"] | keyof ToolSet,
+  string
+>;
+interface HandleMessageStreamOptions {
+  channel: string;
+  thread_ts?: string;
+  fullStream: AsyncIterable<TextStreamPart<ToolSet>>;
+  statusMap?: Partial<StatusEventMap>;
+  onStreamStart?: (response: StreamResponse) => void | Promise<void>;
+  onStreamEnd?: (response: StreamResponse) => void | Promise<void>;
+}
+
+export const handleMessageStream = async ({
+  channel,
+  thread_ts,
+  fullStream,
+  statusMap = {},
+  onStreamStart,
+  onStreamEnd,
+}: HandleMessageStreamOptions) => {
+  let startRes: StreamResponse | null = null;
+  let lastAppendRes: StreamResponse | null = null;
+
+  const updateStatus = async (key: keyof StatusEventMap) => {
+    if (thread_ts && statusMap[key] !== undefined) {
+      await updateAgentStatus({
+        channel,
+        thread_ts,
+        status: statusMap[key],
+      });
+    }
+  };
+
+  try {
+    for await (const part of fullStream) {
+      if (part.type === "text-start") {
+        startRes = await startMessageStream({
+          channel,
+          thread_ts,
+        });
+        await onStreamStart?.(startRes);
+      }
+
+      if (part.type === "text-delta") {
+        if (!startRes) {
+          throw new Error("Received text-delta before text-start");
+        }
+        lastAppendRes = await appendMessageStream({
+          channel,
+          ts: startRes.ts,
+          markdown_text: part.text,
+        });
+      }
+
+      if (part.type in statusMap) {
+        await updateStatus(part.type as keyof StatusEventMap);
+      }
+
+      if (
+        part.type === "tool-input-start" &&
+        part.toolName &&
+        part.toolName in statusMap
+      ) {
+        await updateStatus(part.toolName as keyof StatusEventMap);
+      }
+    }
+
+    if (!lastAppendRes?.ts) {
+      throw new Error("Stream ended without valid message timestamp");
+    }
+
+    const endResponse = await endMessageStream({
+      channel,
+      ts: lastAppendRes.ts,
+    });
+
+    await onStreamEnd?.(endResponse);
+    return endResponse;
+  } catch (error) {
+    if (thread_ts) {
+      await updateAgentStatus({
+        channel,
+        thread_ts,
+        status: "",
+      });
+    }
+    throw error;
+  }
 };

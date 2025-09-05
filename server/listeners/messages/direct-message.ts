@@ -1,9 +1,9 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { respondToMessage } from "~/lib/ai/respond-to-message";
+import { streamMessage } from "~/lib/ai/respond-to-message";
 import {
   getThreadContextAsModelMessage,
-  updateAgentStatus,
+  handleMessageStream,
 } from "~/lib/slack/utils";
 
 export const directMessageCallback = async ({
@@ -22,11 +22,6 @@ export const directMessageCallback = async ({
   let messages: ModelMessage[] = [];
   try {
     if (thread_ts) {
-      updateAgentStatus({
-        channel,
-        thread_ts,
-        status: "is typing...",
-      });
       messages = await getThreadContextAsModelMessage({
         channel,
         ts: thread_ts,
@@ -40,24 +35,27 @@ export const directMessageCallback = async ({
         },
       ];
     }
-
-    const response = await respondToMessage({
+    const { fullStream } = streamMessage({
       messages,
+      event,
       channel,
       thread_ts,
       botId,
-      event,
     });
 
-    await say({
-      blocks: [
-        {
-          type: "markdown",
-          text: response,
-        },
-      ],
-      text: response,
-      thread_ts: thread_ts || message.ts,
+    handleMessageStream({
+      channel,
+      thread_ts,
+      fullStream,
+      statusMap: {
+        "reasoning-start": "is thinking...",
+        "reasoning-delta": "is thinking...",
+        start: "is thinking...",
+        finish: "",
+        "text-end": "",
+        getThreadMessagesTool: "is reading thread...",
+        getChannelMessagesTool: "is reading channel...",
+      },
     });
   } catch (error) {
     logger.error("DM handler failed:", error);

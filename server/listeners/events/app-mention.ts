@@ -1,6 +1,6 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { respondToMessage } from "~/lib/ai/respond-to-message";
+import { generateMessage } from "~/lib/ai/respond-to-message";
 import {
   getThreadContextAsModelMessage,
   MessageState,
@@ -14,6 +14,7 @@ const appMentionCallback = async ({
   context,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<"app_mention">) => {
   const { channel, thread_ts, ts } = event;
+  const { botId } = context;
 
   try {
     await MessageState.setProcessing({
@@ -31,7 +32,7 @@ const appMentionCallback = async ({
       messages = await getThreadContextAsModelMessage({
         channel,
         ts: thread_ts,
-        botId: context.botId,
+        botId,
       });
     } else {
       messages = [
@@ -42,11 +43,11 @@ const appMentionCallback = async ({
       ];
     }
 
-    const response = await respondToMessage({
+    const { text } = await generateMessage({
       messages,
       channel,
       thread_ts,
-      botId: context.botId,
+      botId,
       event,
     });
 
@@ -54,11 +55,11 @@ const appMentionCallback = async ({
       blocks: [
         {
           type: "markdown",
-          text: response,
+          text,
         },
       ],
       // It's important to keep the text property as a fallback for improper markdown
-      text: response,
+      text,
       thread_ts: event.thread_ts || event.ts,
     });
 
