@@ -1,7 +1,7 @@
 {
   "display_information": {
     "name": "Slack Agent",
-    "background_color": "#000000",
+    "background_color": "#000000"
   },
   "features": {
     "app_home": {
@@ -24,7 +24,7 @@
     "slash_commands": [
       {
         "command": "/sample-command",
-        "url": "https://your-app-domain/api/slack/events",
+        "url": "https://04e22eb806a1.ngrok.app/api/slack/events",
         "description": "Runs a sample command",
         "should_escape": false
       }
@@ -50,7 +50,7 @@
   },
   "settings": {
     "event_subscriptions": {
-      "request_url": "https://your-app-domain/api/slack/events",
+      "request_url": "https://04e22eb806a1.ngrok.app/api/slack/events",
       "bot_events": [
         "app_home_opened",
         "app_mention",
@@ -64,7 +64,7 @@
     },
     "interactivity": {
       "is_enabled": true,
-      "request_url": "https://your-app-domain/api/slack/events"
+      "request_url": "https://04e22eb806a1.ngrok.app/api/slack/events"
     },
     "org_deploy_enabled": true,
     "socket_mode_enabled": false,
