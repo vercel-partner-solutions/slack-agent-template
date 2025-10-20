@@ -1,5 +1,6 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type {
+  AssistantThreadsSetStatusArguments,
   ConversationsHistoryArguments,
   ConversationsRepliesArguments,
 } from "@slack/web-api";
@@ -36,24 +37,27 @@ export const onlyChannelType =
     }
   };
 
+// Slack only allows up to 10 loading messages
+const formatLoadingMessages = (loadingMessages: string[]): string[] => {
+  return loadingMessages.slice(0, 10);
+};
+
 export const updateAgentStatus = async ({
-  channel,
+  channel_id,
   thread_ts,
   status,
-}: {
-  channel: string;
-  thread_ts: string;
-  status: string;
-}) => {
+  loading_messages,
+}: AssistantThreadsSetStatusArguments) => {
   try {
     await app.client.assistant.threads.setStatus({
-      channel_id: channel,
+      channel_id,
       thread_ts,
       status,
+      loading_messages: formatLoadingMessages(loading_messages),
     });
   } catch (error) {
     app.logger.error("Failed to update agent status", {
-      channel,
+      channel_id,
       thread_ts,
       status,
       error,
@@ -121,7 +125,7 @@ export const getChannelContextAsModelMessage = async (
   });
 };
 
-export const addReaction = async ({
+export const addEmoji = async ({
   channel,
   timestamp,
   name,
@@ -141,7 +145,7 @@ export const addReaction = async ({
   }
 };
 
-export const removeReaction = async ({
+export const removeEmoji = async ({
   channel,
   timestamp,
   name,
@@ -161,68 +165,4 @@ export const removeReaction = async ({
   }
 };
 
-/**
- * Higher-level API for managing message processing state reactions
- */
-export const MessageState = {
-  /**
-   * Mark a message as being processed by adding an hourglass reaction
-   */
-  setProcessing: async ({
-    channel,
-    timestamp,
-  }: {
-    channel: string;
-    timestamp: string;
-  }) => {
-    await addReaction({
-      channel,
-      timestamp,
-      name: "hourglass_flowing_sand",
-    });
-  },
 
-  /**
-   * Mark a message as successfully processed by replacing hourglass with checkmark
-   */
-  setCompleted: async ({
-    channel,
-    timestamp,
-  }: {
-    channel: string;
-    timestamp: string;
-  }) => {
-    await removeReaction({
-      channel,
-      timestamp,
-      name: "hourglass_flowing_sand",
-    });
-    await addReaction({
-      channel,
-      timestamp,
-      name: "white_check_mark",
-    });
-  },
-
-  /**
-   * Mark a message as failed by replacing hourglass with error mark
-   */
-  setError: async ({
-    channel,
-    timestamp,
-  }: {
-    channel: string;
-    timestamp: string;
-  }) => {
-    await removeReaction({
-      channel,
-      timestamp,
-      name: "hourglass_flowing_sand",
-    });
-    await addReaction({
-      channel,
-      timestamp,
-      name: "x",
-    });
-  },
-};
