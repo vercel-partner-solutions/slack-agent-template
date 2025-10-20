@@ -1,6 +1,6 @@
-import pkg, { LogLevel } from "@slack/bolt";
+import { App, LogLevel } from "@slack/bolt";
 
-const { App } = pkg;
+
 
 import { VercelReceiver } from "@vercel/slack-bolt";
 import registerListeners from "./listeners";
@@ -17,7 +17,7 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   receiver,
   deferInitialization: true,
-  // logLevel,
+  logLevel,
 });
 
 registerListeners(app);

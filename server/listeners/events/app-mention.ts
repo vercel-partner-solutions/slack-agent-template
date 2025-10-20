@@ -1,32 +1,31 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { respondToMessage } from "~/lib/ai/respond-to-message";
+import { createTextStream } from "~/lib/ai/respond-to-message";
+import { feedbackBlock } from "~/lib/slack/blocks";
 import {
   getThreadContextAsModelMessage,
-  MessageState,
   updateAgentStatus,
 } from "~/lib/slack/utils";
 
 const appMentionCallback = async ({
   event,
   say,
+  client,
   logger,
   context,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<"app_mention">) => {
-  const { channel, thread_ts, ts } = event;
+  logger.debug(`app_mention event received: ${JSON.stringify(event)}`);
+  const thread_ts = event.thread_ts || event.ts;
+  const channel = event.channel;
 
   try {
-    await MessageState.setProcessing({
-      channel,
-      timestamp: ts,
-    });
-
     let messages: ModelMessage[] = [];
     if (thread_ts) {
       updateAgentStatus({
-        channel,
+        channel_id: channel,
         thread_ts,
         status: "is typing...",
+        loading_messages: ["is thinking..."],
       });
       messages = await getThreadContextAsModelMessage({
         channel,
@@ -42,7 +41,7 @@ const appMentionCallback = async ({
       ];
     }
 
-    const response = await respondToMessage({
+    const textStream = await createTextStream({
       messages,
       channel,
       thread_ts,
@@ -50,40 +49,32 @@ const appMentionCallback = async ({
       event,
     });
 
-    await say({
-      blocks: [
-        {
-          type: "markdown",
-          text: response,
-        },
-      ],
-      // It's important to keep the text property as a fallback for improper markdown
-      text: response,
-      thread_ts: event.thread_ts || event.ts,
+    const streamer = client.chatStream({
+      channel: channel,
+      thread_ts: thread_ts || event.ts,
+      recipient_team_id: context.teamId,
+      recipient_user_id: context.userId,
     });
 
-    // Set completed state
-    await MessageState.setCompleted({
-      channel,
-      timestamp: ts,
+    for await (const text of textStream) {
+      await streamer.append({
+        markdown_text: text,
+      });
+    }
+
+    await streamer.stop({
+      blocks: [feedbackBlock({ thread_ts })],
     });
   } catch (error) {
     logger.error("app_mention handler failed:", error);
-
-    // Try to mark message as failed, but don't let this prevent user notification
     try {
-      await MessageState.setError({
-        channel,
-        timestamp: ts,
-      });
-    } catch (reactionError) {
-      logger.warn("Failed to set error reaction:", reactionError);
-    }
-
     await say({
       text: "Sorry, something went wrong processing your message. Please try again.",
-      thread_ts: event.thread_ts || event.ts,
-    });
+        thread_ts: event.thread_ts || event.ts,
+      });
+    } catch (error) {
+      logger.error("Failed to send error response:", error);
+    }
   }
 };
 
