@@ -68,8 +68,8 @@ const appMentionCallback = async ({
   } catch (error) {
     logger.error("app_mention handler failed:", error);
     try {
-    await say({
-      text: "Sorry, something went wrong processing your message. Please try again.",
+      await say({
+        text: "Sorry, something went wrong processing your message. Please try again.",
         thread_ts: event.thread_ts || event.ts,
       });
     } catch (error) {

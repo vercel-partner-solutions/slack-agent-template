@@ -164,5 +164,3 @@ export const removeEmoji = async ({
     app.logger.warn(`Failed to remove reaction ${name}:`, error);
   }
 };
-
-

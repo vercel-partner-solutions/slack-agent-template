@@ -1,7 +1,4 @@
 import { App, LogLevel } from "@slack/bolt";
-
-
-
 import { VercelReceiver } from "@vercel/slack-bolt";
 import registerListeners from "./listeners";
 
