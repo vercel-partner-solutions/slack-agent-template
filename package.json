@@ -15,23 +15,23 @@
     "lint:fix": "biome check . --write"
   },
   "dependencies": {
-    "@slack/bolt": "^4.4.0",
-    "@slack/web-api": "^7.10.0",
+    "@slack/bolt": "^4.5.0",
+    "@slack/web-api": "^7.11.0",
     "@vercel/slack-bolt": "latest",
     "ai": "latest",
-    "zod": "^4.0.17"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
-    "@inquirer/input": "^4.2.1",
+    "@inquirer/input": "^4.2.5",
     "@ngrok/ngrok": "^1.5.2",
     "@slack/cli-hooks": "^1.2.1",
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.9.0",
     "boxen": "^8.0.1",
-    "chalk": "^5.5.0",
-    "nitropack": "^2.12.4",
+    "chalk": "^5.6.2",
+    "nitropack": "^2.12.7",
     "ora": "^8.2.0",
-    "tsx": "^4.20.4"
+    "tsx": "^4.20.6"
   },
   "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }
