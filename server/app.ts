@@ -1,6 +1,6 @@
-import pkg, { LogLevel } from "@slack/bolt";
+import { App, LogLevel } from "@slack/bolt";
 
-const { App } = pkg;
+
 
 import { VercelReceiver } from "@vercel/slack-bolt";
 import registerListeners from "./listeners";
