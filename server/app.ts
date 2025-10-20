@@ -17,7 +17,7 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   receiver,
   deferInitialization: true,
-  // logLevel,
+  logLevel,
 });
 
 registerListeners(app);
