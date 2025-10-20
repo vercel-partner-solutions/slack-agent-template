@@ -1,5 +1,5 @@
 import type { KnownEventFromType } from "@slack/bolt";
-import { generateText, type ModelMessage, stepCountIs } from "ai";
+import { type ModelMessage, stepCountIs, streamText } from "ai";
 import { app } from "~/app";
 import {
   getActiveTools,
@@ -23,7 +23,7 @@ export type ExperimentalContext = {
   botId?: string;
 };
 
-export const respondToMessage = async ({
+export const createTextStream = async ({
   messages,
   event,
   channel,
@@ -31,7 +31,7 @@ export const respondToMessage = async ({
   botId,
 }: RespondToMessageOptions) => {
   try {
-    const { text } = await generateText({
+    const { textStream } = await streamText({
       model: "openai/gpt-4o-mini",
       system: `
 			You are Slack Agent, a friendly and professional agent for Slack.
@@ -126,7 +126,7 @@ export const respondToMessage = async ({
         botId,
       } as ExperimentalContext,
     });
-    return text;
+    return textStream;
   } catch (error) {
     app.logger.error(error);
     throw error;
