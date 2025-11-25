@@ -30,7 +30,6 @@ export const createTextStream = async ({
   thread_ts,
   botId,
 }: RespondToMessageOptions) => {
-  console.log("key", process.env.AI_GATEWAY_API_KEY);
   try {
     const { textStream } = streamText({
       model: "openai/gpt-4o-mini",
