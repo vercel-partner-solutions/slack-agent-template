@@ -30,8 +30,9 @@ export const createTextStream = async ({
   thread_ts,
   botId,
 }: RespondToMessageOptions) => {
+  console.log("key", process.env.AI_GATEWAY_API_KEY);
   try {
-    const { textStream } = await streamText({
+    const { textStream } = streamText({
       model: "openai/gpt-4o-mini",
       system: `
 			You are Slack Agent, a friendly and professional agent for Slack.
@@ -116,7 +117,7 @@ export const createTextStream = async ({
         if (toolCalls.length > 0) {
           app.logger.debug(
             "tool call args:",
-            toolCalls.map((call) => call.input),
+            toolCalls.map((call) => call.input)
           );
         }
       },
