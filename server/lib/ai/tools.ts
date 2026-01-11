@@ -34,13 +34,22 @@ const getChannelMessages = tool({
   execute: async ({ channel_id }, { experimental_context }) => {
     const { bot_id: botId } = experimental_context as SlackAgentContext;
     try {
-      return await getChannelContextAsModelMessage({
+      const messages = await getChannelContextAsModelMessage({
         channel: channel_id,
         botId,
       });
+      return {
+        success: true,
+        messages,
+      };
     } catch (error) {
       app.logger.error("Failed to get channel messages:", error);
-      return [];
+      return {
+        success: false,
+        message: "Failed to get channel messages",
+        error: error instanceof Error ? error.message : "Unknown error",
+        messages: [],
+      };
     }
   },
 });
@@ -57,14 +66,23 @@ const getThreadMessages = tool({
   execute: async ({ dm_channel, thread_ts }, { experimental_context }) => {
     const { bot_id: botId } = experimental_context as SlackAgentContext;
     try {
-      return await getThreadContextAsModelMessage({
+      const messages = await getThreadContextAsModelMessage({
         channel: dm_channel,
         ts: thread_ts,
         botId,
       });
+      return {
+        success: true,
+        messages,
+      };
     } catch (error) {
       app.logger.error("Failed to get thread messages:", error);
-      return [];
+      return {
+        success: false,
+        message: "Failed to get thread messages",
+        error: error instanceof Error ? error.message : "Unknown error",
+        messages: [],
+      };
     }
   },
 });
