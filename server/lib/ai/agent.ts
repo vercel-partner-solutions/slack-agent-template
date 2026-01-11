@@ -2,8 +2,6 @@ import { ToolLoopAgent } from "ai";
 import { app } from "~/app";
 import { type SlackAgentContext, slackTools } from "./tools";
 
-export type { SlackAgentContext };
-
 export const createSlackAgent = (context: SlackAgentContext) => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
