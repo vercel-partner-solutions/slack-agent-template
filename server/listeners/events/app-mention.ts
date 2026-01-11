@@ -46,6 +46,7 @@ const appMentionCallback = async ({
       dm_channel: channel, // Same as channel_id for mentions (not a DM)
       thread_ts: thread_ts,
       is_dm: false, // App mentions are always in channels, not DMs
+      team_id: context.teamId,
     });
 
     const stream = await agent.stream({
