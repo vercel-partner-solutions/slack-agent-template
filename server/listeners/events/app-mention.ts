@@ -20,33 +20,26 @@ const appMentionCallback = async ({
 
   try {
     let messages: ModelMessage[] = [];
-    if (thread_ts) {
-      updateAgentStatus({
-        channel_id: channel,
-        thread_ts,
-        status: "is typing...",
-        loading_messages: ["is thinking..."],
-      });
-      messages = await getThreadContextAsModelMessage({
-        channel,
-        ts: thread_ts,
-        botId: context.botId,
-      });
-    } else {
-      messages = [
-        {
-          role: "user",
-          content: event.text,
-        },
-      ];
-    }
+
+    updateAgentStatus({
+      channel_id: channel,
+      thread_ts,
+      status: "is typing...",
+      loading_messages: ["is thinking..."],
+    });
+    messages = await getThreadContextAsModelMessage({
+      channel,
+      ts: thread_ts,
+      botId: context.botId,
+    });
 
     const agent = createSlackAgent({
-      channel_id: channel, // The channel where the mention happened
-      dm_channel: channel, // Same as channel_id for mentions (not a DM)
+      channel_id: channel,
+      dm_channel: channel,
       thread_ts: thread_ts,
-      is_dm: false, // App mentions are always in channels, not DMs
+      is_dm: false,
       team_id: context.teamId,
+      bot_id: context.botId,
     });
 
     const stream = await agent.stream({

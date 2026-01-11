@@ -52,6 +52,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
       thread_ts: thread_ts,
       is_dm,
       team_id: teamId ?? "", // The workspace team_id for API calls
+      bot_id: botId,
     });
 
     const stream = await agent.stream({

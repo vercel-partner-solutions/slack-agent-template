@@ -1,8 +1,8 @@
 import { ToolLoopAgent } from "ai";
 import { app } from "~/app";
 import {
-  getChannelMessagesTool,
-  getThreadMessagesTool,
+  createGetChannelMessagesTool,
+  createGetThreadMessagesTool,
   joinChannelTool,
   searchChannelsTool,
 } from "./tools";
@@ -18,10 +18,12 @@ export type SlackAgentContext = {
   is_dm: boolean;
   /** The team ID (workspace ID) for API calls */
   team_id: string;
+  /** The bot ID to identify assistant messages */
+  bot_id?: string;
 };
 
 export const createSlackAgent = (context: SlackAgentContext) => {
-  const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
+  const { channel_id, dm_channel, thread_ts, is_dm, team_id, bot_id } = context;
 
   // Build the instructions template, conditionally including channel context
   const channelContextSection = channel_id
@@ -82,9 +84,8 @@ Message received
   │
   ├─ Needs context? (ambiguous, incomplete, references past)
   │      ├─ YES:
-  │      │     1. updateAgentStatusTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}", status="is reading thread history...")
-  │      │     2. getThreadMessagesTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}")
-  │      │     3. Thread context answers the question?
+  │      │     1. getThreadMessagesTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}")
+  │      │     2. Thread context answers the question?
   │      │            ├─ YES → Respond
   │      │            └─ NO:
   │      │                 ${decisionFlowChannelSection}
@@ -92,12 +93,11 @@ Message received
   │      │
   │      └─ NO → Respond immediately
   │
-  │
   └─ End
 `,
     tools: {
-      getChannelMessagesTool,
-      getThreadMessagesTool,
+      getChannelMessagesTool: createGetChannelMessagesTool(bot_id),
+      getThreadMessagesTool: createGetThreadMessagesTool(bot_id),
       joinChannelTool,
       searchChannelsTool,
     },
