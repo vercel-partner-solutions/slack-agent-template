@@ -2,14 +2,14 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](<https://vercel.com/new/clone?demo-description=This%20is%20a%20Slack%20Agent%20template%20built%20with%20Bolt%20for%20JavaScript%20(TypeScript)%20and%20the%20Nitro%20server%20framework.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2FSs9t7RkKlPtProrbDhZFM%2F0d11b9095ecf84c87a68fbdef6f12ad1%2FFrame__1_.png&demo-title=Slack%20Agent%20Template&demo-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&env=SLACK_SIGNING_SECRET%2CSLACK_BOT_TOKEN&envDescription=These%20environment%20variables%20are%20required%20to%20deploy%20your%20Slack%20app%20to%20Vercel&envLink=https%3A%2F%2Fapi.slack.com%2Fapps&from=templates&project-name=Slack%20Agent%20Template&project-names=Comma%20separated%20list%20of%20project%20names%2Cto%20match%20the%20root-directories&repository-name=slack-agent-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&root-directories=List%20of%20directory%20paths%20for%20the%20directories%20to%20clone%20into%20projects&skippable-integrations=1>)
 
-A Slack Agent template built with [AI SDK 6](https://ai-sdk.dev), [Bolt for JavaScript](https://tools.slack.dev/bolt-js/) (TypeScript), and the [Nitro](https://nitro.build) server framework.
+A Slack Agent template built with [Workflow DevKit](https://useworkflow.dev)'s `DurableAgent`, [AI SDK](https://ai-sdk.dev) tools, [Bolt for JavaScript](https://tools.slack.dev/bolt-js/) (TypeScript), and the [Nitro](https://nitro.build) server framework.
 
 ## Features
 
-- **Tool Loop Agent** — Uses AI SDK 6's `ToolLoopAgent` for agentic workflows with automatic tool calling
-- **Slack Assistant** — Integrates with [Slack's Assistant API](https://api.slack.com/docs/apps/ai) for threaded conversations
-- **Streaming Responses** — Real-time message streaming to Slack using [AI SDK](https://ai-sdk.dev)
-- **[Vercel AI Gateway](https://vercel.com/ai-gateway)** — One endpoint, all your models. Access hundreds of AI models with automatic failovers and no rate limits
+- **[Workflow DevKit](https://useworkflow.dev)** — Make any TypeScript function durable. Build AI agents that can suspend, resume, and maintain state with ease. Reliability-as-code with automatic retries and observability built in
+- **[AI SDK](https://ai-sdk.dev)** — The AI Toolkit for TypeScript. Define type-safe tools with schema validation and switch between AI providers by changing a single line of code
+- **[Vercel AI Gateway](https://vercel.com/ai-gateway)** — One endpoint, all your models. Access hundreds of AI models through a centralized interface with intelligent failovers and no rate limits
+- **[Slack Assistant](https://api.slack.com/docs/apps/ai)** — Integrates with Slack's Assistant API for threaded conversations with real-time streaming responses
 - **Built-in Tools** — Pre-configured tools for reading channels, threads, joining channels, and searching
 
 ## Prerequisites
@@ -83,15 +83,15 @@ git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd
 
 ### [`/server/lib/ai`](./server/lib/ai)
 
-Contains the AI agent implementation using AI SDK 6:
+Contains the AI agent implementation:
 
-- **[`agent.ts`](./server/lib/ai/agent.ts)** — Creates the `ToolLoopAgent` with system instructions and available tools. The agent automatically handles tool calling loops until it has enough context to respond.
+- **[`agent.ts`](./server/lib/ai/agent.ts)** — Creates the `DurableAgent` from Workflow with system instructions and available tools. The agent automatically handles tool calling loops until it has enough context to respond.
 
-- **[`tools/`](./server/lib/ai/tools)** — Individual tool definitions:
-  - `get-channel-messages.ts` — Fetches recent messages from a Slack channel
-  - `get-thread-messages.ts` — Fetches messages from a specific thread
-  - `join-channel.ts` — Joins a public Slack channel
-  - `search-channels.ts` — Searches for channels by name, topic, or purpose
+- **[`tools.ts`](./server/lib/ai/tools.ts)** — Tool definitions using AI SDK's `tool` function:
+  - `getChannelMessages` — Fetches recent messages from a Slack channel
+  - `getThreadMessages` — Fetches messages from a specific thread
+  - `joinChannel` — Joins a public Slack channel
+  - `searchChannels` — Searches for channels by name, topic, or purpose
 
 ### [`/server/listeners`](./server/listeners)
 
@@ -110,34 +110,38 @@ This is your Nitro server API directory. Contains [`events.post.ts`](./server/ap
 
 ### Modifying Instructions
 
-Edit the `instructions` in [`/server/lib/ai/agent.ts`](./server/lib/ai/agent.ts) to change how your agent behaves, responds, and uses tools.
+Edit the `system` prompt in [`/server/lib/ai/agent.ts`](./server/lib/ai/agent.ts) to change how your agent behaves, responds, and uses tools.
 
 ### Adding New Tools
 
-1. Create a new file in `/server/lib/ai/tools/` following the existing pattern:
+1. Add a new tool definition in `/server/lib/ai/tools.ts` using AI SDK's `tool` function:
 
 ```typescript
 import { tool } from "ai";
 import { z } from "zod";
 
-export const myNewTool = tool({
+const myNewTool = tool({
   description: "Description of what this tool does",
   inputSchema: z.object({
     param: z.string().describe("Parameter description"),
   }),
-  execute: async ({ param }) => {
+  execute: async ({ param }, { experimental_context }) => {
+    "use step"; // Required for Workflow's durable execution
+    const { client } = experimental_context as SlackAgentContext;
     // Tool implementation
     return { result: "..." };
   },
 });
 ```
 
-2. Export it from `/server/lib/ai/tools/index.ts`
-3. Add it to the `tools` object in `/server/lib/ai/agent.ts`
-4. Update the agent instructions to describe when to use the new tool
+2. Add it to the `slackTools` export in `/server/lib/ai/tools.ts`
+3. Update the agent instructions in `/server/lib/ai/agent.ts` to describe when to use the new tool
+
+Learn more about building agents with the AI SDK in the [Agents documentation](https://ai-sdk.dev/docs/agents).
 
 ## Learn More
 
+- [Workflow DevKit Documentation](https://useworkflow.dev/docs)
 - [AI SDK Documentation](https://ai-sdk.dev)
 - [Slack Bolt Documentation](https://tools.slack.dev/bolt-js/)
 - [Slack Assistant API](https://api.slack.com/docs/apps/ai)
