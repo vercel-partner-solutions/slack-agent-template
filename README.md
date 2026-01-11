@@ -10,8 +10,8 @@ A Slack Agent template built with [Workflow DevKit](https://useworkflow.dev)'s `
 - **[AI SDK](https://ai-sdk.dev)** — The AI Toolkit for TypeScript. Define type-safe tools with schema validation and switch between AI providers by changing a single line of code
 - **[Vercel AI Gateway](https://vercel.com/ai-gateway)** — One endpoint, all your models. Access hundreds of AI models through a centralized interface with intelligent failovers and no rate limits
 - **[Slack Assistant](https://api.slack.com/docs/apps/ai)** — Integrates with Slack's Assistant API for threaded conversations with real-time streaming responses
-- **Human-in-the-Loop** — Built-in approval workflows that pause agent execution until a user approves sensitive actions like joining channels
-- **Built-in Tools** — Pre-configured tools for reading channels, threads, joining channels (with approval), and searching
+- **[Human-in-the-Loop](./server/lib/ai/workflows/hooks.ts)** — Built-in approval workflows that pause agent execution until a user approves sensitive actions like joining channels
+- **[Built-in Tools](./server/lib/ai/tools.ts)** — Pre-configured tools for reading channels, threads, joining channels (with approval), and searching
 
 ## Prerequisites
 
