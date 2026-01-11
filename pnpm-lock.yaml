@@ -21,7 +21,7 @@ importers:
         specifier: 4.0.1-beta.44
         version: 4.0.1-beta.44(ai@6.0.27(zod@4.3.5))(workflow@4.0.1-beta.44(@aws-sdk/client-sts@3.966.0)(@opentelemetry/api@1.9.0)(magicast@0.5.1)(next@16.0.10(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))
       ai:
-        specifier: latest
+        specifier: ^6.0.27
         version: 6.0.27(zod@4.3.5)
       workflow:
         specifier: 4.0.1-beta.44

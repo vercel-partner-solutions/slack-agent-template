@@ -5,7 +5,7 @@ import type { SlackAgentContext } from "~/lib/ai/tools";
 
 export async function chatWorkflow(
   messages: ModelMessage[],
-  context: SlackAgentContext
+  context: SlackAgentContext,
 ) {
   "use workflow";
   const writable = getWritable<UIMessageChunk>();

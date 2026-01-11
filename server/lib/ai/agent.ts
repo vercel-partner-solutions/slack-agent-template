@@ -1,5 +1,5 @@
-import { type SlackAgentContext, slackTools } from "./tools";
 import { DurableAgent } from "@workflow/ai/agent";
+import { type SlackAgentContext, slackTools } from "./tools";
 
 export const createSlackAgent = (context: SlackAgentContext): DurableAgent => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;

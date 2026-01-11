@@ -43,7 +43,7 @@ export type SlackUIMessage = ModelMessage & {
 
 const getThreadContext = async (
   args: ConversationsRepliesArguments,
-  client: WebClient
+  client: WebClient,
 ) => {
   const thread = await client.conversations.replies(args);
 
@@ -51,7 +51,7 @@ const getThreadContext = async (
 };
 
 export const getThreadContextAsModelMessage = async (
-  args: ConversationsRepliesArguments & { botId?: string; client: WebClient }
+  args: ConversationsRepliesArguments & { botId?: string; client: WebClient },
 ): Promise<SlackUIMessage[]> => {
   const { botId, client, ...repliesArgs } = args;
   const messages = await getThreadContext(repliesArgs, client);
@@ -76,14 +76,14 @@ export const getThreadContextAsModelMessage = async (
 
 const getChannelContext = async (
   args: ConversationsHistoryArguments,
-  client: WebClient
+  client: WebClient,
 ) => {
   const history = await client.conversations.history(args);
   return history.messages || [];
 };
 
 export const getChannelContextAsModelMessage = async (
-  args: ConversationsHistoryArguments & { botId?: string; client: WebClient }
+  args: ConversationsHistoryArguments & { botId?: string; client: WebClient },
 ): Promise<SlackUIMessage[]> => {
   const { botId, client, ...historyArgs } = args;
   const messages = await getChannelContext(historyArgs, client);

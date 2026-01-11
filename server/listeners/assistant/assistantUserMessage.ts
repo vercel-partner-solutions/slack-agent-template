@@ -1,6 +1,6 @@
 import type { AssistantUserMessageMiddleware } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { run } from "workflow";
+import { start } from "workflow/api";
 import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
@@ -48,15 +48,18 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
       client,
     });
 
-    const readable = await run(chatWorkflow, messages, {
-      channel_id: context_channel_id, // The channel user was viewing (for fetching channel context)
-      dm_channel: channel, // The DM channel where the thread lives
-      thread_ts: thread_ts,
-      is_dm,
-      team_id: teamId ?? "", // The workspace team_id for API calls
-      bot_id: botId,
-      client,
-    });
+    const run = await start(chatWorkflow, [
+      messages,
+      {
+        channel_id: context_channel_id, // The channel user was viewing (for fetching channel context)
+        dm_channel: channel, // The DM channel where the thread lives
+        thread_ts: thread_ts,
+        is_dm,
+        team_id: teamId ?? "", // The workspace team_id for API calls
+        bot_id: botId,
+        client,
+      },
+    ]);
 
     const streamer = client.chatStream({
       channel, // Use the actual DM channel for streaming
@@ -65,7 +68,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
       recipient_user_id: userId,
     });
 
-    for await (const chunk of readable) {
+    for await (const chunk of run.readable) {
       if (chunk.type === "text-delta") {
         await streamer.append({
           markdown_text: chunk.textDelta,

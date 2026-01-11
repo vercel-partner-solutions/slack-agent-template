@@ -1,6 +1,6 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { run } from "workflow";
+import { start } from "workflow/api";
 import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { feedbackBlock } from "~/lib/slack/blocks";
 import {
@@ -36,15 +36,18 @@ const appMentionCallback = async ({
       client,
     });
 
-    const readable = await run(chatWorkflow, messages, {
-      channel_id: channel,
-      dm_channel: channel,
-      thread_ts: thread_ts,
-      is_dm: false,
-      team_id: context.teamId ?? "",
-      bot_id: context.botId,
-      client,
-    });
+    const run = await start(chatWorkflow, [
+      messages,
+      {
+        channel_id: channel,
+        dm_channel: channel,
+        thread_ts: thread_ts,
+        is_dm: false,
+        team_id: context.teamId ?? "",
+        bot_id: context.botId,
+        client,
+      },
+    ]);
 
     const streamer = client.chatStream({
       channel: channel,
@@ -53,7 +56,7 @@ const appMentionCallback = async ({
       recipient_user_id: context.userId,
     });
 
-    for await (const chunk of readable) {
+    for await (const chunk of run.readable) {
       if (chunk.type === "text-delta") {
         await streamer.append({
           markdown_text: chunk.textDelta,

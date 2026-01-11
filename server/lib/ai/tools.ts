@@ -30,7 +30,7 @@ const getChannelMessages = tool({
     channel_id: z
       .string()
       .describe(
-        "The Slack channel ID to fetch messages from (e.g., C0A2NKEHLLV)"
+        "The Slack channel ID to fetch messages from (e.g., C0A2NKEHLLV)",
       ),
   }),
   execute: async ({ channel_id }, { experimental_context }) => {
@@ -142,7 +142,7 @@ const searchChannels = tool({
     query: z
       .string()
       .describe(
-        "The search query to find channels (e.g., 'marketing', 'engineering', 'announcements')"
+        "The search query to find channels (e.g., 'marketing', 'engineering', 'announcements')",
       ),
     team_id: z.string().describe("The workspace team ID to search channels in"),
   }),
@@ -176,8 +176,8 @@ const searchChannels = tool({
         if (result.channels) {
           allChannels.push(
             ...result.channels.filter(
-              (ch): ch is (typeof allChannels)[number] => !!ch.id && !!ch.name
-            )
+              (ch): ch is (typeof allChannels)[number] => !!ch.id && !!ch.name,
+            ),
           );
         }
 
