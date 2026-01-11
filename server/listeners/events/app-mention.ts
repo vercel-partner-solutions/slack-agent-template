@@ -23,7 +23,7 @@ const appMentionCallback = async ({
   try {
     let messages: ModelMessage[] = [];
 
-    updateAgentStatus({
+    await updateAgentStatus({
       client,
       channel_id: channel,
       thread_ts,
