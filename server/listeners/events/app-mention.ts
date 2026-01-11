@@ -1,6 +1,7 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { createSlackAgent } from "~/lib/ai/agent";
+import { run } from "workflow";
+import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { feedbackBlock } from "~/lib/slack/blocks";
 import {
   getThreadContextAsModelMessage,
@@ -22,6 +23,7 @@ const appMentionCallback = async ({
     let messages: ModelMessage[] = [];
 
     updateAgentStatus({
+      client,
       channel_id: channel,
       thread_ts,
       status: "is typing...",
@@ -31,19 +33,17 @@ const appMentionCallback = async ({
       channel,
       ts: thread_ts,
       botId: context.botId,
+      client,
     });
 
-    const agent = createSlackAgent({
+    const readable = await run(chatWorkflow, messages, {
       channel_id: channel,
       dm_channel: channel,
       thread_ts: thread_ts,
       is_dm: false,
-      team_id: context.teamId,
+      team_id: context.teamId ?? "",
       bot_id: context.botId,
-    });
-
-    const stream = await agent.stream({
-      messages,
+      client,
     });
 
     const streamer = client.chatStream({
@@ -53,10 +53,12 @@ const appMentionCallback = async ({
       recipient_user_id: context.userId,
     });
 
-    for await (const chunk of stream.textStream) {
-      await streamer.append({
-        markdown_text: chunk,
-      });
+    for await (const chunk of readable) {
+      if (chunk.type === "text-delta") {
+        await streamer.append({
+          markdown_text: chunk.textDelta,
+        });
+      }
     }
 
     await streamer.stop({

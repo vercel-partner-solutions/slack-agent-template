@@ -1,6 +1,6 @@
+import type { WebClient } from "@slack/web-api";
 import { tool } from "ai";
 import { z } from "zod";
-import { app } from "~/app";
 import {
   getChannelContextAsModelMessage,
   getThreadContextAsModelMessage,
@@ -19,6 +19,8 @@ export type SlackAgentContext = {
   team_id: string;
   /** The bot ID to identify assistant messages */
   bot_id?: string;
+  /** The Slack client to use for API calls */
+  client: WebClient;
 };
 
 const getChannelMessages = tool({
@@ -32,18 +34,20 @@ const getChannelMessages = tool({
       ),
   }),
   execute: async ({ channel_id }, { experimental_context }) => {
-    const { bot_id: botId } = experimental_context as SlackAgentContext;
+    "use step";
+    const { bot_id: botId, client } = experimental_context as SlackAgentContext;
     try {
       const messages = await getChannelContextAsModelMessage({
         channel: channel_id,
         botId,
+        client,
       });
       return {
         success: true,
         messages,
       };
     } catch (error) {
-      app.logger.error("Failed to get channel messages:", error);
+      console.error("Failed to get channel messages:", error);
       return {
         success: false,
         message: "Failed to get channel messages",
@@ -64,19 +68,21 @@ const getThreadMessages = tool({
     thread_ts: z.string().describe("The thread timestamp"),
   }),
   execute: async ({ dm_channel, thread_ts }, { experimental_context }) => {
-    const { bot_id: botId } = experimental_context as SlackAgentContext;
+    "use step";
+    const { bot_id: botId, client } = experimental_context as SlackAgentContext;
     try {
       const messages = await getThreadContextAsModelMessage({
         channel: dm_channel,
         ts: thread_ts,
         botId,
+        client,
       });
       return {
         success: true,
         messages,
       };
     } catch (error) {
-      app.logger.error("Failed to get thread messages:", error);
+      console.error("Failed to get thread messages:", error);
       return {
         success: false,
         message: "Failed to get thread messages",
@@ -95,9 +101,11 @@ const joinChannel = tool({
       .string()
       .describe("The Slack channel ID to join (e.g., C0A2NKEHLLV)"),
   }),
-  execute: async ({ channel_id }) => {
+  execute: async ({ channel_id }, { experimental_context }) => {
+    "use step";
+    const { client } = experimental_context as SlackAgentContext;
     try {
-      const result = await app.client.conversations.join({
+      const result = await client.conversations.join({
         channel: channel_id,
       });
 
@@ -117,7 +125,7 @@ const joinChannel = tool({
         error: result.error,
       };
     } catch (error) {
-      app.logger.error("Failed to join channel:", error);
+      console.error("Failed to join channel:", error);
       return {
         success: false,
         message: "Failed to join channel",
@@ -138,7 +146,9 @@ const searchChannels = tool({
       ),
     team_id: z.string().describe("The workspace team ID to search channels in"),
   }),
-  execute: async ({ query, team_id }) => {
+  execute: async ({ query, team_id }, { experimental_context }) => {
+    "use step";
+    const { client } = experimental_context as SlackAgentContext;
     try {
       const normalizedQuery = query.toLowerCase().replace(/^#/, "");
 
@@ -155,7 +165,7 @@ const searchChannels = tool({
 
       let cursor: string | undefined;
       do {
-        const result = await app.client.conversations.list({
+        const result = await client.conversations.list({
           team_id,
           types: "public_channel",
           exclude_archived: true,
@@ -219,7 +229,7 @@ const searchChannels = tool({
         channels: topChannels,
       };
     } catch (error) {
-      app.logger.error("Failed to search channels:", error);
+      console.error("Failed to search channels:", error);
       return {
         success: false,
         message: "Failed to search channels",

@@ -1,8 +1,7 @@
-import { ToolLoopAgent } from "ai";
-import { app } from "~/app";
 import { type SlackAgentContext, slackTools } from "./tools";
+import { DurableAgent } from "@workflow/ai/agent";
 
-export const createSlackAgent = (context: SlackAgentContext) => {
+export const createSlackAgent = (context: SlackAgentContext): DurableAgent => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
   // Build the instructions template, conditionally including channel context
@@ -20,9 +19,9 @@ export const createSlackAgent = (context: SlackAgentContext) => {
     ? `2. getChannelMessagesTool(channel_id="${channel_id}")`
     : `2. Ask the user if they'd like to switch to a channel for more context`;
 
-  return new ToolLoopAgent({
+  return new DurableAgent({
     model: "openai/gpt-5.2-chat",
-    instructions: `
+    system: `
 You are Slack Agent, a friendly and professional agent for Slack.
 Always gather context from Slack before asking the user for clarification.
 
@@ -76,14 +75,5 @@ Message received
   └─ End
 `,
     tools: slackTools,
-    experimental_context: context,
-    onStepFinish: ({ toolCalls }) => {
-      if (toolCalls.length > 0) {
-        app.logger.debug(
-          "tool call args:",
-          toolCalls.map((call) => call.input)
-        );
-      }
-    },
   });
 };
