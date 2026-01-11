@@ -1,7 +1,7 @@
 import type { ModelMessage, UIMessageChunk } from "ai";
 import { getWritable } from "workflow";
-import { createSlackAgent } from "../agent";
-import type { SlackAgentContext } from "../tools";
+import { createSlackAgent } from "~/lib/ai/agent";
+import type { SlackAgentContext } from "~/lib/ai/tools";
 
 export async function chatWorkflow(
   messages: ModelMessage[],
