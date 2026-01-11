@@ -1,5 +1,5 @@
 import type { AssistantUserMessageMiddleware } from "@slack/bolt";
-import { smoothStream, type ModelMessage } from "ai";
+import { type ModelMessage, smoothStream } from "ai";
 import { createSlackAgent } from "~/lib/ai/agent";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
