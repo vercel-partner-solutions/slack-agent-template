@@ -1,9 +1,19 @@
 import { tool } from "ai";
+import { defineHook } from "workflow";
 import { z } from "zod";
 import type { SlackAgentContextInput } from "~/lib/ai/context";
 
 // Re-export for convenience (type-only, no runtime import)
 export type { SlackAgentContextInput } from "~/lib/ai/context";
+
+// Human-in-the-loop hook for channel join approval
+export const channelJoinApprovalHook = defineHook({
+  schema: z.object({
+    approved: z.boolean(),
+    channelId: z.string(),
+    channelName: z.string().optional(),
+  }),
+});
 
 const getChannelMessages = tool({
   description:
@@ -88,40 +98,152 @@ const getThreadMessages = tool({
   },
 });
 
+// Helper step function to check channel and send approval request
+async function sendApprovalRequest(
+  ctx: SlackAgentContextInput,
+  channelId: string,
+  toolCallId: string
+): Promise<
+  | { success: true; channelName?: string }
+  | { success: false; message: string; isPrivate?: boolean }
+> {
+  "use step";
+  const { WebClient } = await import("@slack/web-api");
+  const { channelJoinApprovalBlocks } = await import("~/lib/slack/blocks");
+
+  const client = new WebClient(ctx.token);
+
+  // First, get channel info to check if it's private and get friendly name
+  let channelName: string | undefined;
+  let isPrivate = false;
+
+  try {
+    const channelInfo = await client.conversations.info({
+      channel: channelId,
+    });
+    channelName = channelInfo.channel?.name;
+    isPrivate = channelInfo.channel?.is_private ?? false;
+  } catch (infoError) {
+    // If we get "channel_not_found", it's likely a private channel we can't access
+    const errorMessage = infoError instanceof Error ? infoError.message : "";
+    if (
+      errorMessage.includes("channel_not_found") ||
+      errorMessage.includes("missing_scope")
+    ) {
+      return {
+        success: false,
+        message:
+          "I cannot access this channel. It may be a private channel. I can only join public channels since I don't have a user token.",
+        isPrivate: true,
+      };
+    }
+    // For other errors, continue without name
+  }
+
+  // Check if the channel is private - bot tokens can only join public channels
+  if (isPrivate) {
+    return {
+      success: false,
+      message: `I cannot join <#${channelId}> because it's a private channel. I can only join public channels. To give me access to a private channel, someone needs to manually invite me using \`/invite @bot-name\`.`,
+      isPrivate: true,
+    };
+  }
+
+  // Send approval request as a reply in the current thread (not top-level)
+  await client.chat.postMessage({
+    channel: ctx.dm_channel,
+    thread_ts: ctx.thread_ts,
+    blocks: channelJoinApprovalBlocks({
+      toolCallId,
+      channelId: channelId,
+      channelName,
+    }),
+    text: `Permission request: Join channel <#${channelId}>?`,
+  });
+
+  return { success: true, channelName };
+}
+
+// Helper step function to actually join the channel
+async function performChannelJoin(
+  ctx: SlackAgentContextInput,
+  channelId: string
+): Promise<{
+  success: boolean;
+  message: string;
+  channel?: unknown;
+  error?: string;
+}> {
+  "use step";
+  const { WebClient } = await import("@slack/web-api");
+  const client = new WebClient(ctx.token);
+
+  try {
+    const result = await client.conversations.join({
+      channel: channelId,
+    });
+
+    if (result.ok) {
+      return {
+        success: true,
+        message: `Successfully joined channel <#${channelId}>`,
+        channel: result.channel,
+      };
+    }
+
+    return {
+      success: false,
+      message: "Failed to join channel after approval",
+      error: result.error,
+    };
+  } catch (error) {
+    console.error("Failed to join channel:", error);
+    return {
+      success: false,
+      message: "Failed to join channel",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 const joinChannel = tool({
   description:
-    "Join a public Slack channel. Use this when you need to access a channel's messages but aren't a member yet. Only works for public channels.",
+    "Join a public Slack channel. Use this when you need to access a channel's messages but aren't a member yet. Only works for public channels. This will request approval from the user before joining.",
   inputSchema: z.object({
     channel_id: z
       .string()
       .describe("The Slack channel ID to join (e.g., C0A2NKEHLLV)"),
   }),
-  execute: async ({ channel_id }, { experimental_context }) => {
-    "use step";
-    const { WebClient } = await import("@slack/web-api");
-
+  execute: async ({ channel_id }, { toolCallId, experimental_context }) => {
+    // Tool execute runs in workflow context - hooks must be created here, not in steps
     const ctx = experimental_context as SlackAgentContextInput;
-    const client = new WebClient(ctx.token);
-    try {
-      const result = await client.conversations.join({
-        channel: channel_id,
-      });
 
-      if (result.ok) {
+    try {
+      // Step 1: Check channel and send approval request (runs in step context)
+      const approvalResult = await sendApprovalRequest(
+        ctx,
+        channel_id,
+        toolCallId
+      );
+
+      if (!approvalResult.success) {
+        return approvalResult;
+      }
+
+      // Step 2: Create hook and wait for approval (runs in workflow context)
+      const hook = channelJoinApprovalHook.create({ token: toolCallId });
+      const { approved, channelId } = await hook;
+
+      if (!approved) {
         return {
-          success: true,
-          message: `Successfully joined channel ${
-            result.channel?.name || channel_id
-          }`,
-          channel: result.channel,
+          success: false,
+          message: `User declined to join channel <#${channelId}>`,
+          rejected: true,
         };
       }
 
-      return {
-        success: false,
-        message: "Failed to join channel",
-        error: result.error,
-      };
+      // Step 3: Actually join the channel (runs in step context)
+      return await performChannelJoin(ctx, channelId);
     } catch (error) {
       console.error("Failed to join channel:", error);
       return {

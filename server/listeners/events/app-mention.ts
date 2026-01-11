@@ -57,26 +57,36 @@ const appMentionCallback = async ({
       recipient_user_id: context.userId,
     });
 
-    for await (const chunk of run.readable) {
-      if (chunk.type === "text-delta" && "delta" in chunk && chunk.delta) {
-        await streamer.append({
-          markdown_text: chunk.delta,
-        });
+    let hasContent = false;
+    try {
+      for await (const chunk of run.readable) {
+        if (chunk.type === "text-delta" && "delta" in chunk && chunk.delta) {
+          hasContent = true;
+          await streamer.append({
+            markdown_text: chunk.delta,
+          });
+        }
       }
+      await streamer.stop({
+        blocks: [feedbackBlock({ thread_ts })],
+      });
+    } catch (streamError) {
+      // Error during streaming - ensure we send a meaningful message
+      logger.error("Streaming error:", streamError);
+      const errorMessage = hasContent
+        ? "\n\n⚠️ Sorry, I encountered an error while processing your request."
+        : "⚠️ Sorry, something went wrong processing your message. Please try again.";
+      await streamer.stop({ markdown_text: errorMessage });
     }
-
-    await streamer.stop({
-      blocks: [feedbackBlock({ thread_ts })],
-    });
   } catch (error) {
     logger.error("app_mention handler failed:", error);
     try {
       await say({
-        text: "Sorry, something went wrong processing your message. Please try again.",
+        text: "⚠️ Sorry, something went wrong processing your message. Please try again.",
         thread_ts: event.thread_ts || event.ts,
       });
-    } catch (error) {
-      logger.error("Failed to send error response:", error);
+    } catch (sayError) {
+      logger.error("Failed to send error response:", sayError);
     }
   }
 };
