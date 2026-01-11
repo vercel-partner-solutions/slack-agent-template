@@ -5,7 +5,7 @@ import type { SlackAgentContextInput } from "~/lib/ai/context";
 
 export async function chatWorkflow(
   messages: ModelMessage[],
-  context: SlackAgentContextInput
+  context: SlackAgentContextInput,
 ) {
   "use workflow";
 
