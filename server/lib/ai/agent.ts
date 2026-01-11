@@ -4,7 +4,6 @@ import {
   getChannelMessagesTool,
   getThreadMessagesTool,
   joinChannelTool,
-  updateAgentStatusTool,
 } from "./tools";
 
 export type SlackAgentContext = {
@@ -82,7 +81,6 @@ Message received
       getChannelMessagesTool,
       getThreadMessagesTool,
       joinChannelTool,
-      updateAgentStatusTool,
     },
     onStepFinish: ({ toolCalls }) => {
       if (toolCalls.length > 0) {
