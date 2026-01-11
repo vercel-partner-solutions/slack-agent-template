@@ -34,20 +34,11 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
 
   let messages: ModelMessage[] = [];
   try {
-    if (thread_ts) {
-      messages = await getThreadContextAsModelMessage({
-        channel: channel_id,
-        ts: thread_ts,
-        botId,
-      });
-    } else {
-      messages = [
-        {
-          role: "user",
-          content: text,
-        },
-      ];
-    }
+    messages = await getThreadContextAsModelMessage({
+      channel: channel_id,
+      ts: thread_ts,
+      botId,
+    });
 
     const agent = createSlackAgent({
       bot_id: botId,
