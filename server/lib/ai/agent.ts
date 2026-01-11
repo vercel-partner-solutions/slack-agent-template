@@ -1,7 +1,10 @@
 import { DurableAgent } from "@workflow/ai/agent";
-import { type SlackAgentContext, slackTools } from "./tools";
+import type { SlackAgentContextInput } from "./context";
+import { slackTools } from "./tools";
 
-export const createSlackAgent = (context: SlackAgentContext): DurableAgent => {
+export const createSlackAgent = (
+  context: SlackAgentContextInput,
+): DurableAgent => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
   // Build the instructions template, conditionally including channel context

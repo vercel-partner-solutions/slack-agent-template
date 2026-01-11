@@ -12,3 +12,4 @@ dist
 .slack/config.json
 friction.md
 .vscode
+.workflow-data

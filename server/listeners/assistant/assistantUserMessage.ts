@@ -2,6 +2,7 @@ import type { AssistantUserMessageMiddleware } from "@slack/bolt";
 import type { ModelMessage } from "ai";
 import { start } from "workflow/api";
 import { chatWorkflow } from "~/lib/ai/workflows/chat";
+import { getClientToken } from "~/lib/slack/client";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
 export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
@@ -57,7 +58,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
         is_dm,
         team_id: teamId ?? "", // The workspace team_id for API calls
         bot_id: botId,
-        client,
+        token: getClientToken(client),
       },
     ]);
 
@@ -69,9 +70,9 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
     });
 
     for await (const chunk of run.readable) {
-      if (chunk.type === "text-delta") {
+      if (chunk.type === "text-delta" && "delta" in chunk && chunk.delta) {
         await streamer.append({
-          markdown_text: chunk.textDelta,
+          markdown_text: chunk.delta,
         });
       }
     }

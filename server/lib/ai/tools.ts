@@ -1,27 +1,9 @@
-import type { WebClient } from "@slack/web-api";
 import { tool } from "ai";
 import { z } from "zod";
-import {
-  getChannelContextAsModelMessage,
-  getThreadContextAsModelMessage,
-} from "~/lib/slack/utils";
+import type { SlackAgentContextInput } from "~/lib/ai/context";
 
-export type SlackAgentContext = {
-  /** The channel user was viewing when opening Assistant (for fetching channel context) */
-  channel_id?: string;
-  /** The DM channel where the thread lives (for thread operations) */
-  dm_channel: string;
-  /** The thread timestamp */
-  thread_ts: string;
-  /** Whether this is a direct message conversation */
-  is_dm: boolean;
-  /** The team ID (workspace ID) for API calls */
-  team_id: string;
-  /** The bot ID to identify assistant messages */
-  bot_id?: string;
-  /** The Slack client to use for API calls */
-  client: WebClient;
-};
+// Re-export for convenience (type-only, no runtime import)
+export type { SlackAgentContextInput } from "~/lib/ai/context";
 
 const getChannelMessages = tool({
   description:
@@ -30,16 +12,23 @@ const getChannelMessages = tool({
     channel_id: z
       .string()
       .describe(
-        "The Slack channel ID to fetch messages from (e.g., C0A2NKEHLLV)",
+        "The Slack channel ID to fetch messages from (e.g., C0A2NKEHLLV)"
       ),
   }),
   execute: async ({ channel_id }, { experimental_context }) => {
     "use step";
-    const { bot_id: botId, client } = experimental_context as SlackAgentContext;
+    // Dynamic imports inside step to avoid bundling Node.js modules in workflow
+    const { WebClient } = await import("@slack/web-api");
+    const { getChannelContextAsModelMessage } = await import(
+      "~/lib/slack/utils"
+    );
+
+    const ctx = experimental_context as SlackAgentContextInput;
+    const client = new WebClient(ctx.token);
     try {
       const messages = await getChannelContextAsModelMessage({
         channel: channel_id,
-        botId,
+        botId: ctx.bot_id,
         client,
       });
       return {
@@ -69,12 +58,18 @@ const getThreadMessages = tool({
   }),
   execute: async ({ dm_channel, thread_ts }, { experimental_context }) => {
     "use step";
-    const { bot_id: botId, client } = experimental_context as SlackAgentContext;
+    const { WebClient } = await import("@slack/web-api");
+    const { getThreadContextAsModelMessage } = await import(
+      "~/lib/slack/utils"
+    );
+
+    const ctx = experimental_context as SlackAgentContextInput;
+    const client = new WebClient(ctx.token);
     try {
       const messages = await getThreadContextAsModelMessage({
         channel: dm_channel,
         ts: thread_ts,
-        botId,
+        botId: ctx.bot_id,
         client,
       });
       return {
@@ -103,7 +98,10 @@ const joinChannel = tool({
   }),
   execute: async ({ channel_id }, { experimental_context }) => {
     "use step";
-    const { client } = experimental_context as SlackAgentContext;
+    const { WebClient } = await import("@slack/web-api");
+
+    const ctx = experimental_context as SlackAgentContextInput;
+    const client = new WebClient(ctx.token);
     try {
       const result = await client.conversations.join({
         channel: channel_id,
@@ -142,13 +140,16 @@ const searchChannels = tool({
     query: z
       .string()
       .describe(
-        "The search query to find channels (e.g., 'marketing', 'engineering', 'announcements')",
+        "The search query to find channels (e.g., 'marketing', 'engineering', 'announcements')"
       ),
     team_id: z.string().describe("The workspace team ID to search channels in"),
   }),
   execute: async ({ query, team_id }, { experimental_context }) => {
     "use step";
-    const { client } = experimental_context as SlackAgentContext;
+    const { WebClient } = await import("@slack/web-api");
+
+    const ctx = experimental_context as SlackAgentContextInput;
+    const client = new WebClient(ctx.token);
     try {
       const normalizedQuery = query.toLowerCase().replace(/^#/, "");
 
@@ -176,8 +177,8 @@ const searchChannels = tool({
         if (result.channels) {
           allChannels.push(
             ...result.channels.filter(
-              (ch): ch is (typeof allChannels)[number] => !!ch.id && !!ch.name,
-            ),
+              (ch): ch is (typeof allChannels)[number] => !!ch.id && !!ch.name
+            )
           );
         }
 

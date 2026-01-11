@@ -3,6 +3,7 @@ import type { ModelMessage } from "ai";
 import { start } from "workflow/api";
 import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { feedbackBlock } from "~/lib/slack/blocks";
+import { getClientToken } from "~/lib/slack/client";
 import {
   getThreadContextAsModelMessage,
   updateAgentStatus,
@@ -45,7 +46,7 @@ const appMentionCallback = async ({
         is_dm: false,
         team_id: context.teamId ?? "",
         bot_id: context.botId,
-        client,
+        token: getClientToken(client),
       },
     ]);
 
@@ -57,9 +58,9 @@ const appMentionCallback = async ({
     });
 
     for await (const chunk of run.readable) {
-      if (chunk.type === "text-delta") {
+      if (chunk.type === "text-delta" && "delta" in chunk && chunk.delta) {
         await streamer.append({
-          markdown_text: chunk.textDelta,
+          markdown_text: chunk.delta,
         });
       }
     }
