@@ -1,19 +1,7 @@
 import { tool } from "ai";
-import { defineHook } from "workflow";
 import { z } from "zod";
 import type { SlackAgentContextInput } from "~/lib/ai/context";
-
-// Re-export for convenience (type-only, no runtime import)
-export type { SlackAgentContextInput } from "~/lib/ai/context";
-
-// Human-in-the-loop hook for channel join approval
-export const channelJoinApprovalHook = defineHook({
-  schema: z.object({
-    approved: z.boolean(),
-    channelId: z.string(),
-    channelName: z.string().optional(),
-  }),
-});
+import { channelJoinApprovalHook } from "~/lib/ai/workflows/hooks";
 
 const getChannelMessages = tool({
   description:

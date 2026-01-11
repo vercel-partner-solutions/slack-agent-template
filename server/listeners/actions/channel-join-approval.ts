@@ -4,7 +4,7 @@ import type {
   ButtonAction,
   SlackActionMiddlewareArgs,
 } from "@slack/bolt";
-import { channelJoinApprovalHook } from "~/lib/ai/tools";
+import { channelJoinApprovalHook } from "~/lib/ai/workflows/hooks";
 
 interface ChannelJoinApprovalValue {
   toolCallId: string;
