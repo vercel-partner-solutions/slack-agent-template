@@ -1,29 +1,11 @@
 import { ToolLoopAgent } from "ai";
 import { app } from "~/app";
-import {
-  createGetChannelMessagesTool,
-  createGetThreadMessagesTool,
-  joinChannelTool,
-  searchChannelsTool,
-} from "./tools";
+import { type SlackAgentContext, slackTools } from "./tools";
 
-export type SlackAgentContext = {
-  /** The channel user was viewing when opening Assistant (for fetching channel context) */
-  channel_id?: string;
-  /** The DM channel where the thread lives (for thread operations) */
-  dm_channel: string;
-  /** The thread timestamp */
-  thread_ts: string;
-  /** Whether this is a direct message conversation */
-  is_dm: boolean;
-  /** The team ID (workspace ID) for API calls */
-  team_id: string;
-  /** The bot ID to identify assistant messages */
-  bot_id?: string;
-};
+export type { SlackAgentContext };
 
 export const createSlackAgent = (context: SlackAgentContext) => {
-  const { channel_id, dm_channel, thread_ts, is_dm, team_id, bot_id } = context;
+  const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
   // Build the instructions template, conditionally including channel context
   const channelContextSection = channel_id
@@ -95,12 +77,8 @@ Message received
   │
   └─ End
 `,
-    tools: {
-      getChannelMessagesTool: createGetChannelMessagesTool(bot_id),
-      getThreadMessagesTool: createGetThreadMessagesTool(bot_id),
-      joinChannelTool,
-      searchChannelsTool,
-    },
+    tools: slackTools,
+    experimental_context: context,
     onStepFinish: ({ toolCalls }) => {
       if (toolCalls.length > 0) {
         app.logger.debug(

@@ -1,8 +1,115 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { app } from "~/app";
+import {
+  getChannelContextAsModelMessage,
+  getThreadContextAsModelMessage,
+} from "~/lib/slack/utils";
 
-export const searchChannelsTool = tool({
+export type SlackAgentContext = {
+  /** The channel user was viewing when opening Assistant (for fetching channel context) */
+  channel_id?: string;
+  /** The DM channel where the thread lives (for thread operations) */
+  dm_channel: string;
+  /** The thread timestamp */
+  thread_ts: string;
+  /** Whether this is a direct message conversation */
+  is_dm: boolean;
+  /** The team ID (workspace ID) for API calls */
+  team_id: string;
+  /** The bot ID to identify assistant messages */
+  bot_id?: string;
+};
+
+const getChannelMessages = tool({
+  description:
+    "Get the messages from a Slack channel. Use this to understand the context of a channel conversation. Pass the channel_id of the channel you want to read.",
+  inputSchema: z.object({
+    channel_id: z
+      .string()
+      .describe(
+        "The Slack channel ID to fetch messages from (e.g., C0A2NKEHLLV)"
+      ),
+  }),
+  execute: async ({ channel_id }, { experimental_context }) => {
+    const { bot_id: botId } = experimental_context as SlackAgentContext;
+    try {
+      return await getChannelContextAsModelMessage({
+        channel: channel_id,
+        botId,
+      });
+    } catch (error) {
+      app.logger.error("Failed to get channel messages:", error);
+      return [];
+    }
+  },
+});
+
+const getThreadMessages = tool({
+  description:
+    "Get the messages from the current conversation thread. This retrieves the conversation history between you and the user.",
+  inputSchema: z.object({
+    dm_channel: z
+      .string()
+      .describe("The DM channel ID where this thread lives"),
+    thread_ts: z.string().describe("The thread timestamp"),
+  }),
+  execute: async ({ dm_channel, thread_ts }, { experimental_context }) => {
+    const { bot_id: botId } = experimental_context as SlackAgentContext;
+    try {
+      return await getThreadContextAsModelMessage({
+        channel: dm_channel,
+        ts: thread_ts,
+        botId,
+      });
+    } catch (error) {
+      app.logger.error("Failed to get thread messages:", error);
+      return [];
+    }
+  },
+});
+
+const joinChannel = tool({
+  description:
+    "Join a public Slack channel. Use this when you need to access a channel's messages but aren't a member yet. Only works for public channels.",
+  inputSchema: z.object({
+    channel_id: z
+      .string()
+      .describe("The Slack channel ID to join (e.g., C0A2NKEHLLV)"),
+  }),
+  execute: async ({ channel_id }) => {
+    try {
+      const result = await app.client.conversations.join({
+        channel: channel_id,
+      });
+
+      if (result.ok) {
+        return {
+          success: true,
+          message: `Successfully joined channel ${
+            result.channel?.name || channel_id
+          }`,
+          channel: result.channel,
+        };
+      }
+
+      return {
+        success: false,
+        message: "Failed to join channel",
+        error: result.error,
+      };
+    } catch (error) {
+      app.logger.error("Failed to join channel:", error);
+      return {
+        success: false,
+        message: "Failed to join channel",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+const searchChannels = tool({
   description:
     "Search for Slack channels by name or topic. Use this when the user asks about a channel by name (e.g., 'tell me about the marketing channel') or wants to find channels matching certain criteria. Returns channel details including name, purpose, topic, and member count.",
   inputSchema: z.object({
@@ -104,3 +211,10 @@ export const searchChannelsTool = tool({
     }
   },
 });
+
+export const slackTools = {
+  getChannelMessages,
+  getThreadMessages,
+  joinChannel,
+  searchChannels,
+};
