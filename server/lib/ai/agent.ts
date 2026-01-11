@@ -1,5 +1,11 @@
-import type { KnownEventFromType } from "@slack/bolt";
-import { type ModelMessage, stepCountIs, streamText } from "ai";
+import type {
+  AppMentionEvent,
+  BotMessageEvent,
+  FileShareMessageEvent,
+  GenericMessageEvent,
+  ThreadBroadcastMessageEvent,
+} from "@slack/web-api";
+import { ToolLoopAgent } from "ai";
 import { app } from "~/app";
 import {
   getActiveTools,
@@ -9,36 +15,29 @@ import {
   updateChatTitleTool,
 } from "./tools";
 
-interface RespondToMessageOptions {
-  messages: ModelMessage[];
-  event: KnownEventFromType<"message"> | KnownEventFromType<"app_mention">;
-  channel?: string;
-  thread_ts?: string;
-  botId?: string;
-}
-
-export type ExperimentalContext = {
-  channel?: string;
-  thread_ts?: string;
-  botId?: string;
+type SlackAgentContext = {
+  event:
+    | GenericMessageEvent
+    | BotMessageEvent
+    | FileShareMessageEvent
+    | ThreadBroadcastMessageEvent
+    | AppMentionEvent;
+  channel_id: string;
+  thread_ts: string;
+  bot_id: string;
+  user_id: string;
+  team_id: string;
 };
 
-export const createTextStream = async ({
-  messages,
-  event,
-  channel,
-  thread_ts,
-  botId,
-}: RespondToMessageOptions) => {
-  try {
-    const { textStream } = streamText({
-      model: "openai/gpt-4o-mini",
-      system: `
+export const createSlackAgent = (context: SlackAgentContext) => {
+  return new ToolLoopAgent({
+    model: "openai/gpt-5.2-chat",
+    instructions: `
 			You are Slack Agent, a friendly and professional agent for Slack.
       Always gather context from Slack before asking the user for clarification.
 
       ${
-        "channel_type" in event && event.channel_type === "im"
+        "channel_type" in context.event && context.event.channel_type === "im"
           ? "You are in a direct message with the user."
           : "You are not in a direct message with the user."
       }
@@ -99,36 +98,25 @@ export const createTextStream = async ({
         │
         └─ End
 			`,
-      messages,
-      stopWhen: stepCountIs(5),
-      tools: {
-        updateChatTitleTool,
-        getThreadMessagesTool,
-        getChannelMessagesTool,
-        updateAgentStatusTool,
-      },
-      prepareStep: () => {
-        return {
-          activeTools: getActiveTools(event),
-        };
-      },
-      onStepFinish: ({ toolCalls }) => {
-        if (toolCalls.length > 0) {
-          app.logger.debug(
-            "tool call args:",
-            toolCalls.map((call) => call.input),
-          );
-        }
-      },
-      experimental_context: {
-        channel,
-        thread_ts,
-        botId,
-      } as ExperimentalContext,
-    });
-    return textStream;
-  } catch (error) {
-    app.logger.error(error);
-    throw error;
-  }
+    tools: {
+      getChannelMessagesTool,
+      getThreadMessagesTool,
+      updateAgentStatusTool,
+      updateChatTitleTool,
+    },
+    experimental_context: context,
+    prepareStep: () => {
+      return {
+        activeTools: getActiveTools(context.event),
+      };
+    },
+    onStepFinish: ({ toolCalls }) => {
+      if (toolCalls.length > 0) {
+        app.logger.debug(
+          "tool call args:",
+          toolCalls.map((call) => call.input)
+        );
+      }
+    },
+  });
 };

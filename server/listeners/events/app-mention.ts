@@ -1,6 +1,6 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { createTextStream } from "~/lib/ai/respond-to-message";
+import { createSlackAgent } from "~/lib/ai/agent";
 import { feedbackBlock } from "~/lib/slack/blocks";
 import {
   getThreadContextAsModelMessage,
@@ -41,12 +41,17 @@ const appMentionCallback = async ({
       ];
     }
 
-    const textStream = await createTextStream({
+    const agent = createSlackAgent({
+      channel_id: channel,
+      thread_ts: thread_ts,
+      bot_id: context.botId,
+      user_id: context.userId,
+      team_id: context.teamId,
+      event: event,
+    });
+
+    const stream = await agent.stream({
       messages,
-      channel,
-      thread_ts,
-      botId: context.botId,
-      event,
     });
 
     const streamer = client.chatStream({
@@ -56,9 +61,9 @@ const appMentionCallback = async ({
       recipient_user_id: context.userId,
     });
 
-    for await (const text of textStream) {
+    for await (const chunk of stream.textStream) {
       await streamer.append({
-        markdown_text: text,
+        markdown_text: chunk,
       });
     }
 

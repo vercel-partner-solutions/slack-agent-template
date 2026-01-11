@@ -26,7 +26,7 @@ export const SUPPORTED_CHANNEL_TYPES: ChannelTypes[] = [
 ];
 
 export const getActiveTools = (
-  event: KnownEventFromType<"message"> | KnownEventFromType<"app_mention">,
+  event: KnownEventFromType<"message"> | KnownEventFromType<"app_mention">
 ): AvailableToolNames[] => {
   const tools = new Set<AvailableToolNames>();
   const channelType = "channel_type" in event ? event.channel_type : null;
@@ -37,7 +37,7 @@ export const getActiveTools = (
   // Add channel messages tool for supported channel types
   if (channelType && SUPPORTED_CHANNEL_TYPES.includes(channelType)) {
     app.logger.debug(
-      `${channelType} channel type detected, adding getChannelMessagesTool`,
+      `${channelType} channel type detected, adding getChannelMessagesTool`
     );
     tools.add("getChannelMessagesTool");
   }

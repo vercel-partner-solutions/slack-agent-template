@@ -1,4 +1,3 @@
-import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type {
   AssistantThreadsSetStatusArguments,
   ConversationsHistoryArguments,
@@ -7,35 +6,6 @@ import type {
 import type { MessageElement } from "@slack/web-api/dist/types/response/ConversationsHistoryResponse";
 import type { ModelMessage } from "ai";
 import { app } from "~/app";
-
-/**
- * Helper function to create a middleware that only runs a callback if the message
- * is in a specific Slack channel type.
- *
- * @example
- * app.message(onlyChannelType("im"), directMessageCallback);
- *
- * @param {SlackEventMiddlewareArgs<"message">["event"]["channel_type"]} type - The Slack channel type to filter for ("im", "group", "mpim", "channel").
- * @returns {Function} Middleware function that only calls next() if the event's channel_type matches the specified type.
- */
-export const onlyChannelType =
-  (type: SlackEventMiddlewareArgs<"message">["event"]["channel_type"]) =>
-  /**
-   * Middleware that proceeds only when the incoming message is in the specified channel type.
-   *
-   * Channel types include: "im" (DM), "group" (private channel), "mpim" (multi-person DM), and "channel" (public channel).
-   *
-   * @param {SlackEventMiddlewareArgs<"message"> & AllMiddlewareArgs} args - Handler args containing the Slack event and next callback.
-   * @returns {Promise<void>} Resolves after conditionally calling `next()`.
-   */
-  async ({
-    event,
-    next,
-  }: SlackEventMiddlewareArgs<"message"> & AllMiddlewareArgs) => {
-    if (event.channel_type === type) {
-      await next();
-    }
-  };
 
 // Slack only allows up to 10 loading messages
 const formatLoadingMessages = (loadingMessages: string[]): string[] => {
@@ -77,7 +47,7 @@ const getThreadContext = async (args: ConversationsRepliesArguments) => {
 };
 
 export const getThreadContextAsModelMessage = async (
-  args: ConversationsRepliesArguments & { botId: string },
+  args: ConversationsRepliesArguments & { botId: string }
 ): Promise<SlackUIMessage[]> => {
   const { botId } = args;
   const messages = await getThreadContext(args);
@@ -104,7 +74,7 @@ const getChannelContext = async (args: ConversationsHistoryArguments) => {
 };
 
 export const getChannelContextAsModelMessage = async (
-  args: ConversationsHistoryArguments & { botId: string },
+  args: ConversationsHistoryArguments & { botId: string }
 ): Promise<SlackUIMessage[]> => {
   const { botId } = args;
   const messages = await getChannelContext(args);
