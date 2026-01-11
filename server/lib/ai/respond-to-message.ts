@@ -116,7 +116,7 @@ export const createTextStream = async ({
         if (toolCalls.length > 0) {
           app.logger.debug(
             "tool call args:",
-            toolCalls.map((call) => call.input)
+            toolCalls.map((call) => call.input),
           );
         }
       },
