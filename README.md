@@ -1,14 +1,25 @@
-# Slack Bolt with Nitro Template
+# Slack Agent Template
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-description=This%20is%20a%20Slack%20Agent%20template%20built%20with%20Bolt%20for%20JavaScript%20(TypeScript)%20and%20the%20Nitro%20server%20framework.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2FSs9t7RkKlPtProrbDhZFM%2F0d11b9095ecf84c87a68fbdef6f12ad1%2FFrame__1_.png&demo-title=Slack%20Agent%20Template&demo-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&env=SLACK_SIGNING_SECRET%2CSLACK_BOT_TOKEN&envDescription=These%20environment%20variables%20are%20required%20to%20deploy%20your%20Slack%20app%20to%20Vercel&envLink=https%3A%2F%2Fapi.slack.com%2Fapps&from=templates&project-name=Slack%20Agent%20Template&project-names=Comma%20separated%20list%20of%20project%20names%2Cto%20match%20the%20root-directories&repository-name=slack-agent-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&root-directories=List%20of%20directory%20paths%20for%20the%20directories%20to%20clone%20into%20projects&skippable-integrations=1)
+[![Deploy with Vercel](https://vercel.com/button)](<https://vercel.com/new/clone?demo-description=This%20is%20a%20Slack%20Agent%20template%20built%20with%20Bolt%20for%20JavaScript%20(TypeScript)%20and%20the%20Nitro%20server%20framework.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2FSs9t7RkKlPtProrbDhZFM%2F0d11b9095ecf84c87a68fbdef6f12ad1%2FFrame__1_.png&demo-title=Slack%20Agent%20Template&demo-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&env=SLACK_SIGNING_SECRET%2CSLACK_BOT_TOKEN&envDescription=These%20environment%20variables%20are%20required%20to%20deploy%20your%20Slack%20app%20to%20Vercel&envLink=https%3A%2F%2Fapi.slack.com%2Fapps&from=templates&project-name=Slack%20Agent%20Template&project-names=Comma%20separated%20list%20of%20project%20names%2Cto%20match%20the%20root-directories&repository-name=slack-agent-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-partner-solutions%2Fslack-agent-template&root-directories=List%20of%20directory%20paths%20for%20the%20directories%20to%20clone%20into%20projects&skippable-integrations=1>)
 
-This is a Slack Agent template built with Bolt for JavaScript (TypeScript) and the Nitro server framework.
+A Slack Agent template built with [AI SDK 6](https://ai-sdk.dev), [Bolt for JavaScript](https://tools.slack.dev/bolt-js/) (TypeScript), and the [Nitro](https://nitro.build) server framework.
 
-Before getting started, make sure you have a development workspace where you have permissions to install apps. You can use a [developer sandbox](https://api.slack.com/developer-program) or [create a workspace](https://slack.com/create)
+## Features
+
+- **Tool Loop Agent** — Uses AI SDK 6's `ToolLoopAgent` for agentic workflows with automatic tool calling
+- **Slack Assistant** — Integrates with [Slack's Assistant API](https://api.slack.com/docs/apps/ai) for threaded conversations
+- **Streaming Responses** — Real-time message streaming to Slack using [AI SDK](https://ai-sdk.dev)
+- **[Vercel AI Gateway](https://vercel.com/ai-gateway)** — One endpoint, all your models. Access hundreds of AI models with automatic failovers and no rate limits
+- **Built-in Tools** — Pre-configured tools for reading channels, threads, joining channels, and searching
+
+## Prerequisites
+
+Before getting started, make sure you have a development workspace where you have permissions to install apps. You can use a [developer sandbox](https://api.slack.com/developer-program) or [create a workspace](https://slack.com/create).
 
 ## Getting Started
 
 ### Clone and install dependencies
+
 ```bash
 git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd slack-agent-template && pnpm install
 ```
@@ -19,8 +30,8 @@ git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd
 2. Choose the workspace you want to use
 3. Copy the contents of [`manifest.json`](./manifest.json) into the text box that says "Paste your manifest code here" (JSON tab) and click Next
 4. Review the configuration and click Create
-5. On the Install App tab, click Install to <Workspace_Name>. 
-      - You will be redirected to the App Configuration dashboard
+5. On the Install App tab, click Install to <Workspace_Name>
+   - You will be redirected to the App Configuration dashboard
 6. Copy the Bot User OAuth Token into your environment as `SLACK_BOT_TOKEN`
 7. On the Basic Information tab, copy your Signing Secret into your environment as `SLACK_SIGNING_SECRET`
 
@@ -33,6 +44,7 @@ git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd
 5. Copy your App ID from the app you just created
 6. Select `Local` when prompted
 7. Open [`.slack/config.json`](./.slack/config.json) and update your manifest source to `local`
+
 ```json
 {
   "manifest": {
@@ -41,23 +53,23 @@ git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd
   "project_id": "<project-id-added-by-slack-cli>"
 }
 ```
-8. Start your local server using `slack run`. If prompted, select the workspace you'd like to grant access to 
-- Select `yes` if asked "Update app settings with changes to the local manifest?"
+
+8. Start your local server using `slack run`. If prompted, select the workspace you'd like to grant access to
+   - Select `yes` if asked "Update app settings with changes to the local manifest?"
 9. Open your Slack workspace and add your new Slack Agent to a channel. Your Slack Agent should respond whenever it's tagged in a message or sent a DM
 
 ## Deploy to Vercel
 
 1. Create a new Slack app for production following the steps from above
 2. Create a new Vercel project [here](https://vercel.com/new) and select this repo
-2. Copy the Bot User OAuth Token into your Vercel environment variables as `SLACK_BOT_TOKEN`
-3. On the Basic Information tab, copy your Signing Secret into your Vercel environment variables as `SLACK_SIGNING_SECRET`
-4. When your deployment has finished, open your App Manifest from the Slack App Dashboard
-5. Update the manifest so all the `request_url` and `url` fields use `https://<your-app-domain>/api/slack/events`
-6. Click save and you will be prompted to verify the URL
-7. Open your Slack workspace and add your new Slack Agent to a channel. Your Slack Agent should respond whenever it's tagged in a message or sent a DM
-    - _Note_: Make sure you add the production app, not the local app we setup earlier
-8. Your app will now automatically build and deploy whenever you commit to your repo. More information [here](https://vercel.com/docs/git)
-
+3. Copy the Bot User OAuth Token into your Vercel environment variables as `SLACK_BOT_TOKEN`
+4. On the Basic Information tab, copy your Signing Secret into your Vercel environment variables as `SLACK_SIGNING_SECRET`
+5. When your deployment has finished, open your App Manifest from the Slack App Dashboard
+6. Update the manifest so all the `request_url` and `url` fields use `https://<your-app-domain>/api/slack/events`
+7. Click save and you will be prompted to verify the URL
+8. Open your Slack workspace and add your new Slack Agent to a channel. Your Slack Agent should respond whenever it's tagged in a message or sent a DM
+   - _Note_: Make sure you add the production app, not the local app we setup earlier
+9. Your app will now automatically build and deploy whenever you commit to your repo. More information [here](https://vercel.com/docs/git)
 
 ## Project Structure
 
@@ -69,10 +81,64 @@ git clone https://github.com/vercel-partner-solutions/slack-agent-template && cd
 
 [`/app.ts`](./server/app.ts) is the entry point of the application. This file is kept minimal and primarily serves to route inbound requests.
 
+### [`/server/lib/ai`](./server/lib/ai)
+
+Contains the AI agent implementation using AI SDK 6:
+
+- **[`agent.ts`](./server/lib/ai/agent.ts)** — Creates the `ToolLoopAgent` with system instructions and available tools. The agent automatically handles tool calling loops until it has enough context to respond.
+
+- **[`tools/`](./server/lib/ai/tools)** — Individual tool definitions:
+  - `get-channel-messages.ts` — Fetches recent messages from a Slack channel
+  - `get-thread-messages.ts` — Fetches messages from a specific thread
+  - `join-channel.ts` — Joins a public Slack channel
+  - `search-channels.ts` — Searches for channels by name, topic, or purpose
+
 ### [`/server/listeners`](./server/listeners)
 
-Every incoming request is routed to a "listener". Inside this directory, we group each listener based on the Slack Platform feature used, so [`/listeners/shortcuts`](./server/listeners/shortcuts/index.ts) handles incoming [Shortcuts](https://api.slack.com/interactivity/shortcuts) requests, [`/listeners/views`](./server/listeners/views/index.ts) handles [View submissions](https://api.slack.com/reference/interaction-payloads/views#view_submission) and so on.
+Every incoming request is routed to a "listener". Inside this directory, we group each listener based on the Slack Platform feature used:
 
-### [`/server`](./server)
+- [`/listeners/assistant`](./server/listeners/assistant) — Handles Slack Assistant events (thread started, user message, context changed)
+- [`/listeners/shortcuts`](./server/listeners/shortcuts/index.ts) — Handles incoming [Shortcuts](https://api.slack.com/interactivity/shortcuts) requests
+- [`/listeners/views`](./server/listeners/views/index.ts) — Handles [View submissions](https://api.slack.com/reference/interaction-payloads/views#view_submission)
+- [`/listeners/events`](./server/listeners/events) — Handles Slack events like app mentions and home tab opens
 
-This is your nitro server directory. Inside you have an [`api`](./server/api) folder that contains a [`events.post.ts`](./server/api/slack/events.post.ts) file. This matches the request URL's defined in your [`manifest.json`](./manifest.json) file. Nitro uses file based routing for incoming requests. You can learn more about this [here](https://nitro.build/guide/routing).
+### [`/server/api`](./server/api)
+
+This is your Nitro server API directory. Contains [`events.post.ts`](./server/api/slack/events.post.ts) which matches the request URL defined in your [`manifest.json`](./manifest.json). Nitro uses file-based routing for incoming requests. Learn more [here](https://nitro.build/guide/routing).
+
+## Customizing the Agent
+
+### Modifying Instructions
+
+Edit the `instructions` in [`/server/lib/ai/agent.ts`](./server/lib/ai/agent.ts) to change how your agent behaves, responds, and uses tools.
+
+### Adding New Tools
+
+1. Create a new file in `/server/lib/ai/tools/` following the existing pattern:
+
+```typescript
+import { tool } from "ai";
+import { z } from "zod";
+
+export const myNewTool = tool({
+  description: "Description of what this tool does",
+  inputSchema: z.object({
+    param: z.string().describe("Parameter description"),
+  }),
+  execute: async ({ param }) => {
+    // Tool implementation
+    return { result: "..." };
+  },
+});
+```
+
+2. Export it from `/server/lib/ai/tools/index.ts`
+3. Add it to the `tools` object in `/server/lib/ai/agent.ts`
+4. Update the agent instructions to describe when to use the new tool
+
+## Learn More
+
+- [AI SDK Documentation](https://ai-sdk.dev)
+- [Slack Bolt Documentation](https://tools.slack.dev/bolt-js/)
+- [Slack Assistant API](https://api.slack.com/docs/apps/ai)
+- [Nitro Documentation](https://nitro.build)
