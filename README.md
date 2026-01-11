@@ -110,6 +110,63 @@ This is your Nitro server API directory. Contains [`events.post.ts`](./server/ap
 
 ## Agent Architecture
 
+### Chat Workflow
+
+The core agent loop is implemented as a durable workflow using Workflow DevKit. When a user sends a message, the workflow orchestrates the agent's response with automatic retry handling and streaming support.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       Chat Workflow                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  User Message ──▶ assistantUserMessage listener                 │
+│                              │                                  │
+│                              ▼                                  │
+│                   ┌─────────────────────┐                       │
+│                   │  start(chatWorkflow)│                       │
+│                   │  with messages +    │                       │
+│                   │  context            │                       │
+│                   └─────────────────────┘                       │
+│                              │                                  │
+│                              ▼                                  │
+│                   ┌─────────────────────┐                       │
+│                   │  createSlackAgent() │                       │
+│                   │  with tools         │                       │
+│                   └─────────────────────┘                       │
+│                              │                                  │
+│                              ▼                                  │
+│                   ┌─────────────────────┐                       │
+│                   │  agent.stream()     │──▶ Tool calls         │
+│                   │  generates response │    (may loop)         │
+│                   └─────────────────────┘                       │
+│                              │                                  │
+│                              ▼                                  │
+│                   ┌─────────────────────┐                       │
+│                   │  Stream chunks to   │                       │
+│                   │  Slack via          │                       │
+│                   │  chatStream()       │                       │
+│                   └─────────────────────┘                       │
+│                              │                                  │
+│                              ▼                                  │
+│                        User sees response                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key files:**
+
+- [`/server/lib/ai/workflows/chat.ts`](./server/lib/ai/workflows/chat.ts) — The durable workflow definition using `"use workflow"` directive
+- [`/server/lib/ai/agent.ts`](./server/lib/ai/agent.ts) — Creates the `DurableAgent` with system prompt and tools
+- [`/server/listeners/assistant/assistantUserMessage.ts`](./server/listeners/assistant/assistantUserMessage.ts) — Listener that starts the workflow and streams responses
+
+**How it works:**
+
+1. User sends a message to the Slack Assistant
+2. The `assistantUserMessage` listener collects thread context and starts the workflow
+3. `chatWorkflow` creates the agent and calls `agent.stream()` with the messages
+4. The agent processes the request, calling tools as needed (each tool uses `"use step"` for durability)
+5. Response chunks are streamed back to Slack in real-time via `chatStream()`
+
 ### Human-in-the-Loop (HITL) Workflow
 
 This template demonstrates a production-ready Human-in-the-Loop pattern using Workflow DevKit's `defineHook` primitive. When the agent needs to perform sensitive actions (like joining a channel), it pauses execution and waits for user approval.
