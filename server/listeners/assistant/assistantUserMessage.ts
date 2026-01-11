@@ -1,5 +1,5 @@
 import type { AssistantUserMessageMiddleware } from "@slack/bolt";
-import type { ModelMessage } from "ai";
+import { smoothStream, type ModelMessage } from "ai";
 import { createSlackAgent } from "~/lib/ai/agent";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
@@ -30,10 +30,10 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
   }
   await setStatus("is thinking...");
   const { thread_ts, channel } = message;
-  const { userId, botId } = context;
+  const { userId, botId, teamId } = context;
   // channel_id is the channel the user was viewing when they opened Assistant (for context)
   // channel is the actual DM channel where the thread lives
-  const { channel_id: context_channel_id, team_id } = await getThreadContext();
+  const { channel_id: context_channel_id } = await getThreadContext();
 
   // Determine if this is a DM (channel type starts with 'D')
   const is_dm = channel.startsWith("D");
@@ -51,16 +51,18 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
       dm_channel: channel, // The DM channel where the thread lives
       thread_ts: thread_ts,
       is_dm,
+      team_id: teamId ?? "", // The workspace team_id for API calls
     });
 
     const stream = await agent.stream({
       messages,
+      experimental_transform: smoothStream(),
     });
 
     const streamer = client.chatStream({
       channel, // Use the actual DM channel for streaming
       thread_ts: thread_ts || message.ts,
-      recipient_team_id: team_id,
+      recipient_team_id: teamId,
       recipient_user_id: userId,
     });
 

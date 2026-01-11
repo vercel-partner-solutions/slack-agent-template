@@ -4,6 +4,7 @@ import {
   getChannelMessagesTool,
   getThreadMessagesTool,
   joinChannelTool,
+  searchChannelsTool,
 } from "./tools";
 
 export type SlackAgentContext = {
@@ -15,10 +16,12 @@ export type SlackAgentContext = {
   thread_ts: string;
   /** Whether this is a direct message conversation */
   is_dm: boolean;
+  /** The team ID (workspace ID) for API calls */
+  team_id: string;
 };
 
 export const createSlackAgent = (context: SlackAgentContext) => {
-  const { channel_id, dm_channel, thread_ts, is_dm } = context;
+  const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
   return new ToolLoopAgent({
     model: "openai/gpt-5.2-chat",
@@ -50,6 +53,7 @@ Always gather context from Slack before asking the user for clarification.
 - Always read thread and channel before asking for clarification.
 - If you get an error fetching channel messages (e.g., "not_in_channel"), you may need to join first.
 - **Joining channels**: When the user asks to "join this channel" or "join the channel I'm looking at", use joinChannelTool with channel_id="${channel_id}". Don't ask for the channel ID—you already have it.
+- **Searching channels**: When the user asks about a channel by name (e.g., "tell me about the marketing channel", "what is #engineering for?", "find channels about design"), use searchChannelsTool with team_id="${team_id}". This returns channel details including purpose, topic, and member count.
 
 ### 4. Responding
 - Answer clearly and helpfully after fetching context.
@@ -81,6 +85,7 @@ Message received
       getChannelMessagesTool,
       getThreadMessagesTool,
       joinChannelTool,
+      searchChannelsTool,
     },
     onStepFinish: ({ toolCalls }) => {
       if (toolCalls.length > 0) {
