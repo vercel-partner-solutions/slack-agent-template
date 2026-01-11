@@ -1,9 +1,10 @@
+import type { App } from "@slack/bolt";
 import { Assistant } from "@slack/bolt";
 import { assistantThreadContextChanged } from "./assistantThreadContextChanged";
 import { assistantThreadStarted } from "./assistantThreadStarted";
 import { assistantUserMessage } from "./assistantUserMessage";
 
-export const assistant = new Assistant({
+const assistant = new Assistant({
   /**
    * (Recommended) A custom ThreadContextStore can be provided, inclusive of methods to
    * get and save thread context. When provided, these methods will override the `getThreadContext`
@@ -33,3 +34,9 @@ export const assistant = new Assistant({
    */
   userMessage: assistantUserMessage,
 });
+
+const register = (app: App) => {
+  app.assistant(assistant);
+};
+
+export default { register };

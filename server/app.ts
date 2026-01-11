@@ -1,7 +1,6 @@
 import { App, LogLevel } from "@slack/bolt";
 import { VercelReceiver } from "@vercel/slack-bolt";
 import registerListeners from "./listeners";
-import { assistant } from "./listeners/assistant";
 
 const logLevel =
   process.env.NODE_ENV === "development" ? LogLevel.DEBUG : LogLevel.INFO;
@@ -19,8 +18,5 @@ const app = new App({
 });
 
 registerListeners(app);
-
-// Register the global assistant to listen for all assistant events
-app.assistant(assistant);
 
 export { app, receiver };
