@@ -1,114 +1,88 @@
-import type {
-  AppMentionEvent,
-  BotMessageEvent,
-  FileShareMessageEvent,
-  GenericMessageEvent,
-  ThreadBroadcastMessageEvent,
-} from "@slack/web-api";
 import { ToolLoopAgent } from "ai";
 import { app } from "~/app";
 import {
-  getActiveTools,
   getChannelMessagesTool,
   getThreadMessagesTool,
+  joinChannelTool,
   updateAgentStatusTool,
-  updateChatTitleTool,
 } from "./tools";
 
-type SlackAgentContext = {
-  event:
-    | GenericMessageEvent
-    | BotMessageEvent
-    | FileShareMessageEvent
-    | ThreadBroadcastMessageEvent
-    | AppMentionEvent;
+export type SlackAgentContext = {
+  /** The channel user was viewing when opening Assistant (for fetching channel context) */
   channel_id: string;
+  /** The DM channel where the thread lives (for thread operations) */
+  dm_channel: string;
+  /** The thread timestamp */
   thread_ts: string;
-  bot_id: string;
-  user_id: string;
-  team_id: string;
+  /** Whether this is a direct message conversation */
+  is_dm: boolean;
 };
 
 export const createSlackAgent = (context: SlackAgentContext) => {
+  const { channel_id, dm_channel, thread_ts, is_dm } = context;
+
   return new ToolLoopAgent({
     model: "openai/gpt-5.2-chat",
     instructions: `
-			You are Slack Agent, a friendly and professional agent for Slack.
-      Always gather context from Slack before asking the user for clarification.
+You are Slack Agent, a friendly and professional agent for Slack.
+Always gather context from Slack before asking the user for clarification.
 
-      ${
-        "channel_type" in context.event && context.event.channel_type === "im"
-          ? "You are in a direct message with the user."
-          : "You are not in a direct message with the user."
-      }
+## Current Context
+- You are ${
+      is_dm ? "in a direct message" : "in a channel conversation"
+    } with the user.
+- Thread: ${thread_ts} in DM channel: ${dm_channel}
+- **The user is currently viewing channel: ${channel_id}** — When the user says "this channel", "the channel I'm looking at", "the current channel", or similar, they mean ${channel_id}. Use this channel_id directly without asking.
 
-      Core Rules
-      1. Decide if Context Is Needed
-      - If the message is related to general knowledge, such as "Who is the president of the USA", do NOT fetch context -> respond.
-      - If the message references earlier discussion, uses vague pronouns, or is incomplete → fetch context.
-      - If unsure → fetch context.
+## Core Rules
 
-      2. Always keep the user informed using updateAgentStatusTool in the format: is <doing thing>... (e.g., “is retrieving thread history...”).
-      - Use multiple tool calls at once whenever possible.
-      - Never mention technical details like API parameters or IDs.
+### 1. Decide if Context Is Needed
+- General knowledge questions (e.g., "Who is the president of the USA") → respond immediately, no context fetch.
+- References earlier discussion, uses vague pronouns, or is incomplete → fetch context.
+- If unsure → fetch context.
 
-      3. Fetching Context
-      - If the message is a direct message, you don't have access to the channel, you only have access to the thread messages.
-      - If context is needed, always read the thread first → getThreadMessagesTool.
-      - If the thread messages are not related to the conversation -> getChannelMessagesTool.
-      - Use the combination of thread and channel messages to answer the question.
-      - Always read the thread and channel before asking the user for next steps or clarification.
+### 2. Tool Usage
+- Use multiple tool calls at once whenever possible.
+- Never mention technical details like API parameters or IDs to the user.
 
-      4. Titles
-      - You can only update the title if you are in a direct message.
-      - New conversation started → updateChatTitleTool with a relevant title.
-      - Topic change → updateChatTitleTool with a new title.
-      - Never update your status or inform the user when updating the title. This is an invisible action the user does not need to know about.
+### 3. Fetching Context & Joining Channels
+- If context is needed, always read the thread first → getThreadMessagesTool.
+- If thread messages don't answer the question → getChannelMessagesTool.
+- Always read thread and channel before asking for clarification.
+- If you get an error fetching channel messages (e.g., "not_in_channel"), you may need to join first.
+- **Joining channels**: When the user asks to "join this channel" or "join the channel I'm looking at", use joinChannelTool with channel_id="${channel_id}". Don't ask for the channel ID—you already have it.
 
-      5. Responding
-      - After fetching context, answer clearly and helpfully.
-      - Suggest next steps if needed; avoid unnecessary clarifying questions if tools can answer.
-      - Slack markdown does not support language tags in code blocks.
-      - If your response includes a user's id like U0931KUHGC8, you must tag them. You cannot respond with just the id. You must use the <@user_id> syntax.
+### 4. Responding
+- Answer clearly and helpfully after fetching context.
+- Suggest next steps if needed; avoid unnecessary clarifying questions.
+- Slack markdown doesn't support language tags in code blocks.
+- Tag users with <@user_id> syntax, never just show the ID.
 
-      Message received
-        │
-        ├─ Needs context? (ambiguous, incomplete, references past)
-        │      ├─ YES:
-        │      │     1. updateAgentStatusTool ("is reading thread history...")
-        │      │     2. getThreadMessagesTool 
-        │      │     3. Thread context answers the question?
-        │      │            ├─ YES:
-        │      │            │   └─ Respond
-        │      │            │     
-        │      │            └─ NO:
-        │      │                 1. updateAgentStatusTool ("is reading channel messages...")
-        │      │                 2. getChannelMessagesTool
-        │      │                 3. Channel context answers the question?
-        │      │                        ├─ YES: Respond
-        │      │                        └─ NO: Respond that you are unsure ans ask for more context.
-        │      │
-        │      └─ NO:
-        │           Respond immediately (no context fetch needed)
-        │
-        ├─ Is direct message?
-        │      └─ YES:
-        │            1. Update the title of the chat to something concise and relevant to the conversation -> updateChatTitleTool
-        │            2. Respond
-        │
-        └─ End
-			`,
+## Decision Flow
+
+Message received
+  │
+  ├─ Needs context? (ambiguous, incomplete, references past)
+  │      ├─ YES:
+  │      │     1. updateAgentStatusTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}", status="is reading thread history...")
+  │      │     2. getThreadMessagesTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}")
+  │      │     3. Thread context answers the question?
+  │      │            ├─ YES → Respond
+  │      │            └─ NO:
+  │      │                 1. updateAgentStatusTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}", status="is reading channel messages...")
+  │      │                 2. getChannelMessagesTool(channel_id="${channel_id}")
+  │      │                 3. Respond (or ask for more context if still unclear)
+  │      │
+  │      └─ NO → Respond immediately
+  │
+  │
+  └─ End
+`,
     tools: {
       getChannelMessagesTool,
       getThreadMessagesTool,
+      joinChannelTool,
       updateAgentStatusTool,
-      updateChatTitleTool,
-    },
-    experimental_context: context,
-    prepareStep: () => {
-      return {
-        activeTools: getActiveTools(context.event),
-      };
     },
     onStepFinish: ({ toolCalls }) => {
       if (toolCalls.length > 0) {

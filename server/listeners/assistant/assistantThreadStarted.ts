@@ -11,8 +11,6 @@ export const assistantThreadStarted: AssistantThreadStartedMiddleware = async ({
   say,
   setSuggestedPrompts,
   saveThreadContext,
-  setStatus,
-  client,
 }) => {
   const { context } = event.assistant_thread;
 
@@ -56,16 +54,13 @@ export const assistantThreadStarted: AssistantThreadStartedMiddleware = async ({
      * that only make sense to appear in that context.
      */
     if (context.channel_id) {
-      await setStatus("is gathering context...");
-      const channelInfo = await client.conversations.info({
-        channel: context.channel_id,
-      });
       await setSuggestedPrompts({
         title: "Perform an action based on the channel",
         prompts: [
           {
-            title: `Summarize ${channelInfo.channel?.name}`,
-            message: `Summarize the activity in ${channelInfo.channel?.name}`,
+            title: "Summarize channel",
+            message:
+              "Assistant, please summarize the activity in this channel!",
           },
         ],
       });

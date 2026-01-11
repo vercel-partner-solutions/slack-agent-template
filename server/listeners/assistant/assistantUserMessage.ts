@@ -1,7 +1,6 @@
 import type { AssistantUserMessageMiddleware } from "@slack/bolt";
 import type { ModelMessage } from "ai";
 import { createSlackAgent } from "~/lib/ai/agent";
-import { feedbackBlock } from "~/lib/slack/blocks";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
 export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
@@ -11,6 +10,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
   message,
   say,
   getThreadContext,
+  setStatus,
 }) => {
   /**
    * Messages sent to the Assistant can have a specific message subtype.
@@ -28,25 +28,29 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
   ) {
     return;
   }
-  const { thread_ts, text } = message;
+  await setStatus("is thinking...");
+  const { thread_ts, channel } = message;
   const { userId, botId } = context;
-  const { channel_id, team_id } = await getThreadContext();
+  // channel_id is the channel the user was viewing when they opened Assistant (for context)
+  // channel is the actual DM channel where the thread lives
+  const { channel_id: context_channel_id, team_id } = await getThreadContext();
+
+  // Determine if this is a DM (channel type starts with 'D')
+  const is_dm = channel.startsWith("D");
 
   let messages: ModelMessage[] = [];
   try {
     messages = await getThreadContextAsModelMessage({
-      channel: channel_id,
+      channel, // Use the actual DM channel, not the context channel
       ts: thread_ts,
       botId,
     });
 
     const agent = createSlackAgent({
-      bot_id: botId,
-      user_id: userId,
-      team_id: team_id,
-      channel_id: channel_id,
+      channel_id: context_channel_id, // The channel user was viewing (for fetching channel context)
+      dm_channel: channel, // The DM channel where the thread lives
       thread_ts: thread_ts,
-      event: message,
+      is_dm,
     });
 
     const stream = await agent.stream({
@@ -54,7 +58,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
     });
 
     const streamer = client.chatStream({
-      channel: channel_id,
+      channel, // Use the actual DM channel for streaming
       thread_ts: thread_ts || message.ts,
       recipient_team_id: team_id,
       recipient_user_id: userId,
@@ -66,9 +70,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
       });
     }
 
-    await streamer.stop({
-      blocks: [feedbackBlock({ thread_ts: thread_ts })],
-    });
+    await streamer.stop();
   } catch (error) {
     logger.error("DM handler failed:", error);
     try {
@@ -79,5 +81,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
     } catch (error) {
       logger.error("Failed to send error response:", error);
     }
+  } finally {
+    await setStatus("");
   }
 };

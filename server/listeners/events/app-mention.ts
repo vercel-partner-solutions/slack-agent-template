@@ -42,12 +42,10 @@ const appMentionCallback = async ({
     }
 
     const agent = createSlackAgent({
-      channel_id: channel,
+      channel_id: channel, // The channel where the mention happened
+      dm_channel: channel, // Same as channel_id for mentions (not a DM)
       thread_ts: thread_ts,
-      bot_id: context.botId,
-      user_id: context.userId,
-      team_id: context.teamId,
-      event: event,
+      is_dm: false, // App mentions are always in channels, not DMs
     });
 
     const stream = await agent.stream({

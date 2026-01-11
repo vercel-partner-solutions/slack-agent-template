@@ -47,15 +47,17 @@ const getThreadContext = async (args: ConversationsRepliesArguments) => {
 };
 
 export const getThreadContextAsModelMessage = async (
-  args: ConversationsRepliesArguments & { botId: string }
+  args: ConversationsRepliesArguments & { botId?: string },
 ): Promise<SlackUIMessage[]> => {
   const { botId } = args;
   const messages = await getThreadContext(args);
 
   return messages.map((message) => {
     const { bot_id, text, user, ts, thread_ts, type } = message;
+    // If botId provided, match exactly; otherwise treat any bot message as assistant
+    const isAssistant = botId ? bot_id === botId : !!bot_id;
     return {
-      role: bot_id === botId ? "assistant" : "user",
+      role: isAssistant ? "assistant" : "user",
       content: text,
       metadata: {
         user: user || null,
@@ -74,15 +76,17 @@ const getChannelContext = async (args: ConversationsHistoryArguments) => {
 };
 
 export const getChannelContextAsModelMessage = async (
-  args: ConversationsHistoryArguments & { botId: string }
+  args: ConversationsHistoryArguments & { botId?: string },
 ): Promise<SlackUIMessage[]> => {
   const { botId } = args;
   const messages = await getChannelContext(args);
 
   return messages.map((message) => {
     const { bot_id, text, user, ts, thread_ts, type } = message;
+    // If botId provided, match exactly; otherwise treat any bot message as assistant
+    const isAssistant = botId ? bot_id === botId : !!bot_id;
     return {
-      role: bot_id === botId ? "assistant" : "user",
+      role: isAssistant ? "assistant" : "user",
       content: text,
       metadata: {
         user: user || null,
