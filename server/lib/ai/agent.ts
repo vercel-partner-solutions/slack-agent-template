@@ -3,7 +3,7 @@ import type { SlackAgentContextInput } from "./context";
 import { slackTools } from "./tools";
 
 export const createSlackAgent = (
-  context: SlackAgentContextInput,
+  context: SlackAgentContextInput
 ): DurableAgent => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
