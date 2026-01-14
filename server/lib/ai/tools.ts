@@ -101,18 +101,17 @@ async function sendApprovalRequest(
 
   const client = new WebClient(ctx.token);
 
-  // First, get channel info to check if it's private and get friendly name
+  // Get channel info to get friendly name
   let channelName: string | undefined;
-  let isPrivate = false;
 
   try {
     const channelInfo = await client.conversations.info({
       channel: channelId,
     });
     channelName = channelInfo.channel?.name;
-    isPrivate = channelInfo.channel?.is_private ?? false;
   } catch (infoError) {
     // If we get "channel_not_found", it's likely a private channel we can't access
+    // (bots can't see private channels they're not members of)
     const errorMessage = infoError instanceof Error ? infoError.message : "";
     if (
       errorMessage.includes("channel_not_found") ||
@@ -126,15 +125,6 @@ async function sendApprovalRequest(
       };
     }
     // For other errors, continue without name
-  }
-
-  // Check if the channel is private - bot tokens can only join public channels
-  if (isPrivate) {
-    return {
-      success: false,
-      message: `I cannot join <#${channelId}> because it's a private channel. I can only join public channels. To give me access to a private channel, someone needs to manually invite me using \`/invite @bot-name\`.`,
-      isPrivate: true,
-    };
   }
 
   // Send approval request as a reply in the current thread (not top-level)
