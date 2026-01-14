@@ -14,12 +14,12 @@ export const createSlackAgent = (
 
   // Build the joining channels section, only including join instructions if channel_id exists
   const joinChannelsSection = channel_id
-    ? `- **Joining channels**: When the user asks to "join this channel" or "join the channel I'm looking at", use joinChannelTool with channel_id="${channel_id}". Don't ask for the channel ID—you already have it.`
-    : `- **Joining channels**: When the user asks to join a channel, ask them which channel they'd like to join. Use searchChannelsTool to help them find it first if needed.`;
+    ? `- **Joining channels**: When the user asks to "join this channel" or "join the channel I'm looking at", use joinChannel with channel_id="${channel_id}". Don't ask for the channel ID—you already have it.`
+    : `- **Joining channels**: When the user asks to join a channel, ask them which channel they'd like to join. Use searchChannels to help them find it first if needed.`;
 
   // Build the decision flow section, conditionally including channel message fetching if channel_id exists
   const decisionFlowChannelSection = channel_id
-    ? `2. getChannelMessagesTool(channel_id="${channel_id}")`
+    ? `2. getChannelMessages(channel_id="${channel_id}")`
     : `2. Ask the user if they'd like to switch to a channel for more context`;
 
   return new DurableAgent({
@@ -47,12 +47,12 @@ ${channelContextSection}
 - Never mention technical details like API parameters or IDs to the user.
 
 ### 3. Fetching Context & Joining Channels
-- If context is needed, always read the thread first → getThreadMessagesTool.
-- If thread messages don't answer the question → getChannelMessagesTool.
+- If context is needed, always read the thread first → getThreadMessages.
+- If thread messages don't answer the question → getChannelMessages.
 - Always read thread and channel before asking for clarification.
 - If you get an error fetching channel messages (e.g., "not_in_channel"), you may need to join first.
 ${joinChannelsSection}
-- **Searching channels**: When the user asks about a channel by name (e.g., "tell me about the marketing channel", "what is #engineering for?", "find channels about design"), use searchChannelsTool with team_id="${team_id}". This returns channel details including purpose, topic, and member count.
+- **Searching channels**: When the user asks about a channel by name (e.g., "tell me about the marketing channel", "what is #engineering for?", "find channels about design"), use searchChannels with team_id="${team_id}". This returns channel details including purpose, topic, and member count.
 
 ### 4. Responding
 - Answer clearly and helpfully after fetching context.
@@ -66,7 +66,7 @@ Message received
   │
   ├─ Needs context? (ambiguous, incomplete, references past)
   │      ├─ YES:
-  │      │     1. getThreadMessagesTool(dm_channel="${dm_channel}", thread_ts="${thread_ts}")
+  │      │     1. getThreadMessages(dm_channel="${dm_channel}", thread_ts="${thread_ts}")
   │      │     2. Thread context answers the question?
   │      │            ├─ YES → Respond
   │      │            └─ NO:
