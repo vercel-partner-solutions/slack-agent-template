@@ -241,7 +241,6 @@ Edit the `system` prompt in [`/server/lib/ai/agent.ts`](./server/lib/ai/agent.ts
 
 ```typescript
 import { tool } from "ai";
-import { WebClient } from "@slack/web-api";
 import { z } from "zod";
 import type { SlackAgentContextInput } from "~/lib/ai/context";
 
@@ -252,6 +251,10 @@ const myNewTool = tool({
   }),
   execute: async ({ param }, { experimental_context }) => {
     "use step"; // Required for Workflow's durable execution
+
+    // Dynamic imports inside step to avoid bundling Node.js modules in workflow
+    const { WebClient } = await import("@slack/web-api");
+
     const ctx = experimental_context as SlackAgentContextInput;
     const client = new WebClient(ctx.token);
     // Tool implementation
