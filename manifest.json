@@ -37,6 +37,7 @@
     "scopes": {
       "bot": [
         "channels:history",
+        "channels:read",
         "chat:write",
         "commands",
         "app_mentions:read",
@@ -44,7 +45,8 @@
         "im:history",
         "mpim:history",
         "assistant:write",
-        "reactions:write"
+        "reactions:write",
+        "channels:join"
       ]
     }
   },

@@ -1,41 +1,11 @@
-import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type {
   AssistantThreadsSetStatusArguments,
   ConversationsHistoryArguments,
   ConversationsRepliesArguments,
+  WebClient,
 } from "@slack/web-api";
 import type { MessageElement } from "@slack/web-api/dist/types/response/ConversationsHistoryResponse";
 import type { ModelMessage } from "ai";
-import { app } from "~/app";
-
-/**
- * Helper function to create a middleware that only runs a callback if the message
- * is in a specific Slack channel type.
- *
- * @example
- * app.message(onlyChannelType("im"), directMessageCallback);
- *
- * @param {SlackEventMiddlewareArgs<"message">["event"]["channel_type"]} type - The Slack channel type to filter for ("im", "group", "mpim", "channel").
- * @returns {Function} Middleware function that only calls next() if the event's channel_type matches the specified type.
- */
-export const onlyChannelType =
-  (type: SlackEventMiddlewareArgs<"message">["event"]["channel_type"]) =>
-  /**
-   * Middleware that proceeds only when the incoming message is in the specified channel type.
-   *
-   * Channel types include: "im" (DM), "group" (private channel), "mpim" (multi-person DM), and "channel" (public channel).
-   *
-   * @param {SlackEventMiddlewareArgs<"message"> & AllMiddlewareArgs} args - Handler args containing the Slack event and next callback.
-   * @returns {Promise<void>} Resolves after conditionally calling `next()`.
-   */
-  async ({
-    event,
-    next,
-  }: SlackEventMiddlewareArgs<"message"> & AllMiddlewareArgs) => {
-    if (event.channel_type === type) {
-      await next();
-    }
-  };
 
 // Slack only allows up to 10 loading messages
 const formatLoadingMessages = (loadingMessages: string[]): string[] => {
@@ -43,20 +13,21 @@ const formatLoadingMessages = (loadingMessages: string[]): string[] => {
 };
 
 export const updateAgentStatus = async ({
+  client,
   channel_id,
   thread_ts,
   status,
   loading_messages,
-}: AssistantThreadsSetStatusArguments) => {
+}: AssistantThreadsSetStatusArguments & { client: WebClient }) => {
   try {
-    await app.client.assistant.threads.setStatus({
+    await client.assistant.threads.setStatus({
       channel_id,
       thread_ts,
       status,
       loading_messages: formatLoadingMessages(loading_messages),
     });
   } catch (error) {
-    app.logger.error("Failed to update agent status", {
+    console.error("Failed to update agent status", {
       channel_id,
       thread_ts,
       status,
@@ -70,22 +41,27 @@ export type SlackUIMessage = ModelMessage & {
   metadata?: MessageElement;
 };
 
-const getThreadContext = async (args: ConversationsRepliesArguments) => {
-  const thread = await app.client.conversations.replies(args);
+const getThreadContext = async (
+  args: ConversationsRepliesArguments,
+  client: WebClient,
+) => {
+  const thread = await client.conversations.replies(args);
 
   return thread.messages || [];
 };
 
 export const getThreadContextAsModelMessage = async (
-  args: ConversationsRepliesArguments & { botId: string },
+  args: ConversationsRepliesArguments & { botId?: string; client: WebClient },
 ): Promise<SlackUIMessage[]> => {
-  const { botId } = args;
-  const messages = await getThreadContext(args);
+  const { botId, client, ...repliesArgs } = args;
+  const messages = await getThreadContext(repliesArgs, client);
 
   return messages.map((message) => {
     const { bot_id, text, user, ts, thread_ts, type } = message;
+    // If botId provided, match exactly; otherwise treat any bot message as assistant
+    const isAssistant = botId ? bot_id === botId : !!bot_id;
     return {
-      role: bot_id === botId ? "assistant" : "user",
+      role: isAssistant ? "assistant" : "user",
       content: text,
       metadata: {
         user: user || null,
@@ -98,21 +74,26 @@ export const getThreadContextAsModelMessage = async (
   });
 };
 
-const getChannelContext = async (args: ConversationsHistoryArguments) => {
-  const history = await app.client.conversations.history(args);
+const getChannelContext = async (
+  args: ConversationsHistoryArguments,
+  client: WebClient,
+) => {
+  const history = await client.conversations.history(args);
   return history.messages || [];
 };
 
 export const getChannelContextAsModelMessage = async (
-  args: ConversationsHistoryArguments & { botId: string },
+  args: ConversationsHistoryArguments & { botId?: string; client: WebClient },
 ): Promise<SlackUIMessage[]> => {
-  const { botId } = args;
-  const messages = await getChannelContext(args);
+  const { botId, client, ...historyArgs } = args;
+  const messages = await getChannelContext(historyArgs, client);
 
   return messages.map((message) => {
     const { bot_id, text, user, ts, thread_ts, type } = message;
+    // If botId provided, match exactly; otherwise treat any bot message as assistant
+    const isAssistant = botId ? bot_id === botId : !!bot_id;
     return {
-      role: bot_id === botId ? "assistant" : "user",
+      role: isAssistant ? "assistant" : "user",
       content: text,
       metadata: {
         user: user || null,
@@ -126,41 +107,45 @@ export const getChannelContextAsModelMessage = async (
 };
 
 export const addEmoji = async ({
+  client,
   channel,
   timestamp,
   name,
 }: {
+  client: WebClient;
   channel: string;
   timestamp: string;
   name: string;
 }) => {
   try {
-    await app.client.reactions.add({
+    await client.reactions.add({
       channel,
       timestamp,
       name,
     });
   } catch (error) {
-    app.logger.warn(`Failed to add reaction ${name}:`, error);
+    console.warn(`Failed to add reaction ${name}:`, error);
   }
 };
 
 export const removeEmoji = async ({
+  client,
   channel,
   timestamp,
   name,
 }: {
+  client: WebClient;
   channel: string;
   timestamp: string;
   name: string;
 }) => {
   try {
-    await app.client.reactions.remove({
+    await client.reactions.remove({
       channel,
       timestamp,
       name,
     });
   } catch (error) {
-    app.logger.warn(`Failed to remove reaction ${name}:`, error);
+    console.warn(`Failed to remove reaction ${name}:`, error);
   }
 };

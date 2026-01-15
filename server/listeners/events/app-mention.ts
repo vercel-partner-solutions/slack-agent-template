@@ -1,7 +1,9 @@
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from "@slack/bolt";
 import type { ModelMessage } from "ai";
-import { createTextStream } from "~/lib/ai/respond-to-message";
+import { start } from "workflow/api";
+import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { feedbackBlock } from "~/lib/slack/blocks";
+import { getClientToken } from "~/lib/slack/client";
 import {
   getThreadContextAsModelMessage,
   updateAgentStatus,
@@ -20,34 +22,33 @@ const appMentionCallback = async ({
 
   try {
     let messages: ModelMessage[] = [];
-    if (thread_ts) {
-      updateAgentStatus({
-        channel_id: channel,
-        thread_ts,
-        status: "is typing...",
-        loading_messages: ["is thinking..."],
-      });
-      messages = await getThreadContextAsModelMessage({
-        channel,
-        ts: thread_ts,
-        botId: context.botId,
-      });
-    } else {
-      messages = [
-        {
-          role: "user",
-          content: event.text,
-        },
-      ];
-    }
 
-    const textStream = await createTextStream({
-      messages,
-      channel,
+    await updateAgentStatus({
+      client,
+      channel_id: channel,
       thread_ts,
-      botId: context.botId,
-      event,
+      status: "is typing...",
+      loading_messages: ["is thinking..."],
     });
+    messages = await getThreadContextAsModelMessage({
+      channel,
+      ts: thread_ts,
+      botId: context.botId,
+      client,
+    });
+
+    const run = await start(chatWorkflow, [
+      messages,
+      {
+        channel_id: channel,
+        dm_channel: channel,
+        thread_ts: thread_ts,
+        is_dm: false,
+        team_id: context.teamId ?? "",
+        bot_id: context.botId,
+        token: getClientToken(client),
+      },
+    ]);
 
     const streamer = client.chatStream({
       channel: channel,
@@ -56,24 +57,36 @@ const appMentionCallback = async ({
       recipient_user_id: context.userId,
     });
 
-    for await (const text of textStream) {
-      await streamer.append({
-        markdown_text: text,
+    let hasContent = false;
+    try {
+      for await (const chunk of run.readable) {
+        if (chunk.type === "text-delta" && "delta" in chunk && chunk.delta) {
+          hasContent = true;
+          await streamer.append({
+            markdown_text: chunk.delta,
+          });
+        }
+      }
+      await streamer.stop({
+        blocks: [feedbackBlock({ thread_ts })],
       });
+    } catch (streamError) {
+      // Error during streaming - ensure we send a meaningful message
+      logger.error("Streaming error:", streamError);
+      const errorMessage = hasContent
+        ? "\n\n⚠️ Sorry, I encountered an error while processing your request."
+        : "⚠️ Sorry, something went wrong processing your message. Please try again.";
+      await streamer.stop({ markdown_text: errorMessage });
     }
-
-    await streamer.stop({
-      blocks: [feedbackBlock({ thread_ts })],
-    });
   } catch (error) {
     logger.error("app_mention handler failed:", error);
     try {
       await say({
-        text: "Sorry, something went wrong processing your message. Please try again.",
+        text: "⚠️ Sorry, something went wrong processing your message. Please try again.",
         thread_ts: event.thread_ts || event.ts,
       });
-    } catch (error) {
-      logger.error("Failed to send error response:", error);
+    } catch (sayError) {
+      logger.error("Failed to send error response:", sayError);
     }
   }
 };

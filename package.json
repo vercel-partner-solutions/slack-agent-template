@@ -12,13 +12,16 @@
     "prepare": "nitro prepare",
     "preview": "node .output/server/index.mjs",
     "lint": "biome check .",
-    "lint:fix": "biome check . --write"
+    "lint:fix": "biome check . --write",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.13.0",
     "@vercel/slack-bolt": "latest",
-    "ai": "latest",
+    "@workflow/ai": "4.0.1-beta.44",
+    "ai": "^6.0.27",
+    "workflow": "4.0.1-beta.44",
     "zod": "^4.3.5"
   },
   "devDependencies": {
