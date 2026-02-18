@@ -1,9 +1,11 @@
+import type { ToolSet } from "ai";
 import { DurableAgent } from "@workflow/ai/agent";
 import type { SlackAgentContextInput } from "./context";
 import { slackTools } from "./tools";
 
 export const createSlackAgent = (
-  context: SlackAgentContextInput
+  context: SlackAgentContextInput,
+  mcpTools?: ToolSet
 ): DurableAgent => {
   const { channel_id, dm_channel, thread_ts, is_dm, team_id } = context;
 
@@ -54,7 +56,18 @@ ${channelContextSection}
 ${joinChannelsSection}
 - **Searching channels**: When the user asks about a channel by name (e.g., "tell me about the marketing channel", "what is #engineering for?", "find channels about design"), use searchChannels with team_id="${team_id}". This returns channel details including purpose, topic, and member count.
 
-### 4. Responding
+### 4. Slack MCP Tools
+${
+  mcpTools
+    ? `- You have access to additional Slack MCP tools (prefixed with "slack_") for posting messages, adding reactions, getting user profiles, and more.
+- Use slack_post_message to send messages to channels, slack_reply_to_thread to reply in threads, slack_add_reaction to react to messages.
+- Use slack_get_users and slack_get_user_profile to look up user information.
+- Use slack_get_channel_history and slack_get_thread_replies for additional context gathering.
+- Use slack_list_channels to discover available channels.`
+    : "- Slack MCP tools are not currently available."
+}
+
+### 5. Responding
 - Answer clearly and helpfully after fetching context.
 - Suggest next steps if needed; avoid unnecessary clarifying questions.
 - Slack markdown doesn't support language tags in code blocks.
@@ -77,6 +90,9 @@ Message received
   │
   └─ End
 `,
-    tools: slackTools,
+    tools: {
+      ...slackTools,
+      ...(mcpTools ?? {}),
+    },
   });
 };
