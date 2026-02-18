@@ -34,6 +34,9 @@
     }
   },
   "oauth_config": {
+    "redirect_urls": [
+      "https://your-app-domain.com/slack/oauth_redirect"
+    ],
     "scopes": {
       "bot": [
         "channels:history",
@@ -47,6 +50,26 @@
         "assistant:write",
         "reactions:write",
         "channels:join"
+      ],
+      "user": [
+        "search:read",
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "mpim:history",
+        "mpim:read",
+        "im:history",
+        "im:read",
+        "users:read",
+        "users:read.email",
+        "chat:write",
+        "canvases:read",
+        "canvases:write",
+        "files:read",
+        "reactions:read",
+        "team:read",
+        "usergroups:read"
       ]
     }
   },

@@ -14,4 +14,6 @@ export type SlackAgentContextInput = {
   bot_id?: string;
   /** The Slack bot token for creating the client */
   token: string;
+  /** The user's OAuth token (xoxp-...) for Slack MCP server, if available */
+  userToken?: string;
 };

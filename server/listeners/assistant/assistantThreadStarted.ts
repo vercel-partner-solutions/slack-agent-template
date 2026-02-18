@@ -1,4 +1,5 @@
 import type { AssistantThreadStartedMiddleware } from "@slack/bolt";
+import { getUserToken } from "~/lib/slack/installation-store";
 
 /**
  * The `assistant_thread_started` event is sent when a user opens the Assistant container.
@@ -11,10 +12,25 @@ export const assistantThreadStarted: AssistantThreadStartedMiddleware = async ({
   say,
   setSuggestedPrompts,
   saveThreadContext,
+  context: boltContext,
 }) => {
   const { context } = event.assistant_thread;
 
   try {
+    // Check if the user has authorized MCP tools via OAuth
+    let hasMcpToken = false;
+    if (boltContext.userId && boltContext.teamId) {
+      try {
+        const token = await getUserToken(
+          boltContext.teamId,
+          boltContext.userId
+        );
+        hasMcpToken = !!token;
+      } catch {
+        // DB not configured yet -- that's fine, just skip
+      }
+    }
+
     /**
      * Since context is not sent along with individual user messages, it's necessary to keep
      * track of the context of the conversation to better assist the user. Sending an initial
@@ -23,7 +39,31 @@ export const assistantThreadStarted: AssistantThreadStartedMiddleware = async ({
      * The `say` utility sends this metadata along automatically behind the scenes.
      * !! Please note: this is only intended for development and demonstrative purposes.
      */
-    await say("Hi, how can I help?");
+    if (!hasMcpToken && process.env.SLACK_CLIENT_ID) {
+      const baseUrl =
+        process.env.SLACK_OAUTH_REDIRECT_URL?.replace(/\/$/, "") ||
+        (process.env.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+          : process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : "http://localhost:3000");
+      const installUrl = `${baseUrl}/slack/install`;
+
+      await say({
+        text: `Hi, how can I help? For enhanced features like searching messages, files, and users, authorize the app: ${installUrl}`,
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `Hi, how can I help?\n\nFor enhanced features like searching messages, files, and users, <${installUrl}|authorize the app> to grant MCP access.`,
+            },
+          },
+        ],
+      });
+    } else {
+      await say("Hi, how can I help?");
+    }
 
     await saveThreadContext();
 

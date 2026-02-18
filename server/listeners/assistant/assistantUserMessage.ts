@@ -3,6 +3,7 @@ import type { ModelMessage } from "ai";
 import { start } from "workflow/api";
 import { chatWorkflow } from "~/lib/ai/workflows/chat";
 import { getClientToken } from "~/lib/slack/client";
+import { getUserToken } from "~/lib/slack/installation-store";
 import { getThreadContextAsModelMessage } from "~/lib/slack/utils";
 
 export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
@@ -40,6 +41,17 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
   // Determine if this is a DM (channel type starts with 'D')
   const is_dm = channel.startsWith("D");
 
+  // Look up the user's MCP OAuth token from the database
+  let userToken: string | undefined;
+  if (userId && teamId) {
+    try {
+      const token = await getUserToken(teamId, userId);
+      if (token) userToken = token;
+    } catch (err) {
+      logger.warn("Failed to look up user MCP token:", err);
+    }
+  }
+
   let messages: ModelMessage[] = [];
   try {
     messages = await getThreadContextAsModelMessage({
@@ -59,6 +71,7 @@ export const assistantUserMessage: AssistantUserMessageMiddleware = async ({
         team_id: teamId ?? "", // The workspace team_id for API calls
         bot_id: botId,
         token: getClientToken(client),
+        userToken,
       },
     ]);
 

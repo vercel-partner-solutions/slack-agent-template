@@ -13,22 +13,12 @@ export type MCPClientInstance = Awaited<ReturnType<typeof createMCPClient>>;
  *
  * @see https://docs.slack.dev/ai/slack-mcp-server/
  *
- * Required env vars:
- * - SLACK_MCP_USER_TOKEN: A Slack user OAuth token (xoxp-...) with the appropriate
- *   scopes for the MCP tools you want to use. See the Slack MCP docs for required scopes.
- *
+ * @param userToken - A Slack user OAuth token (xoxp-...) obtained via the OAuth flow.
  * @returns The MCP client instance (must be closed after use)
  */
-export async function createSlackMCPClient(): Promise<MCPClientInstance> {
-  const userToken = process.env.SLACK_MCP_USER_TOKEN;
-
-  if (!userToken) {
-    throw new Error(
-      "SLACK_MCP_USER_TOKEN is required to connect to Slack's MCP server. " +
-        "This must be a user OAuth token (xoxp-...) with the appropriate scopes. " +
-        "See https://docs.slack.dev/ai/slack-mcp-server/ for details."
-    );
-  }
+export async function createSlackMCPClient(
+  userToken: string
+): Promise<MCPClientInstance> {
 
   const client = await createMCPClient({
     transport: {

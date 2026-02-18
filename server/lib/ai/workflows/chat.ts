@@ -16,13 +16,13 @@ export async function chatWorkflow(
 
   const writable = getWritable<UIMessageChunk>();
 
-  // Initialize MCP client for Slack's official MCP server (if user token is configured)
+  // Initialize MCP client for Slack's official MCP server (if user has authorized via OAuth)
   let mcpClient: MCPClientInstance | undefined;
   let mcpTools: ToolSet | undefined;
 
-  if (process.env.SLACK_MCP_USER_TOKEN) {
+  if (context.userToken) {
     try {
-      mcpClient = await createSlackMCPClient();
+      mcpClient = await createSlackMCPClient(context.userToken);
       mcpTools = await getSlackMCPTools(mcpClient);
     } catch (error) {
       console.warn("Failed to initialize Slack MCP client:", error);
