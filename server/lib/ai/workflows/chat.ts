@@ -16,11 +16,11 @@ export async function chatWorkflow(
 
   const writable = getWritable<UIMessageChunk>();
 
-  // Initialize MCP client for Slack MCP tools (if SLACK_TEAM_ID is configured)
+  // Initialize MCP client for Slack's official MCP server (if user token is configured)
   let mcpClient: MCPClientInstance | undefined;
   let mcpTools: ToolSet | undefined;
 
-  if (process.env.SLACK_TEAM_ID) {
+  if (process.env.SLACK_MCP_USER_TOKEN) {
     try {
       mcpClient = await createSlackMCPClient();
       mcpTools = await getSlackMCPTools(mcpClient);
@@ -40,7 +40,7 @@ export async function chatWorkflow(
       experimental_context: context,
     });
   } finally {
-    // Always close the MCP client to clean up the subprocess
+    // Always close the MCP client to clean up the HTTP session
     if (mcpClient) {
       try {
         await mcpClient.close();

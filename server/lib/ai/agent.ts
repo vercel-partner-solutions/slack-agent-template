@@ -59,11 +59,11 @@ ${joinChannelsSection}
 ### 4. Slack MCP Tools
 ${
   mcpTools
-    ? `- You have access to additional Slack MCP tools (prefixed with "slack_") for posting messages, adding reactions, getting user profiles, and more.
-- Use slack_post_message to send messages to channels, slack_reply_to_thread to reply in threads, slack_add_reaction to react to messages.
-- Use slack_get_users and slack_get_user_profile to look up user information.
-- Use slack_get_channel_history and slack_get_thread_replies for additional context gathering.
-- Use slack_list_channels to discover available channels.`
+    ? `- You have access to additional tools from Slack's official MCP server (https://mcp.slack.com/mcp).
+- These tools can search channels, messages, files, and users across the workspace.
+- They can also send messages, read threads/channel history, and manage canvases.
+- Use these MCP tools to complement your built-in tools — they act on behalf of the authenticated user.
+- Prefer MCP tools for searching (messages, files, users) since they provide richer results than the built-in tools.`
     : "- Slack MCP tools are not currently available."
 }
 
