@@ -20,6 +20,7 @@
     "@slack/web-api": "^7.13.0",
     "@vercel/slack-bolt": "latest",
     "@workflow/ai": "4.0.1-beta.44",
+    "@workflow/nitro": "4.0.1-beta.53",
     "ai": "^6.0.27",
     "workflow": "4.0.1-beta.44",
     "zod": "^4.3.5"
@@ -33,7 +34,7 @@
     "boxen": "^8.0.1",
     "chalk": "^5.6.2",
     "dotenv": "^17.2.3",
-    "nitropack": "^2.13.0",
+    "nitro": "latest",
     "ora": "^8.2.0",
     "tsx": "^4.21.0"
   },

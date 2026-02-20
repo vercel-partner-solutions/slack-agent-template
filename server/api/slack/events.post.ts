@@ -1,10 +1,9 @@
 import { createHandler } from "@vercel/slack-bolt";
+import { defineHandler } from "nitro/h3";
 import { app, receiver } from "~/app";
 
 const handler = createHandler(app, receiver);
 
-export default defineEventHandler(async (event) => {
-  // In v3 of Nitro, we will be able to use the request object directly
-  const request = toWebRequest(event);
-  return await handler(request);
+export default defineHandler(async (event) => {
+  return await handler(event.req);
 });

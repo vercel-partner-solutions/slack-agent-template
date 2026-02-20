@@ -4,7 +4,6 @@ import type {
   ConversationsRepliesArguments,
   WebClient,
 } from "@slack/web-api";
-import type { MessageElement } from "@slack/web-api/dist/types/response/ConversationsHistoryResponse";
 import type { ModelMessage } from "ai";
 
 // Slack only allows up to 10 loading messages
@@ -24,7 +23,7 @@ export const updateAgentStatus = async ({
       channel_id,
       thread_ts,
       status,
-      loading_messages: formatLoadingMessages(loading_messages),
+      loading_messages: formatLoadingMessages(loading_messages || []),
     });
   } catch (error) {
     console.error("Failed to update agent status", {
@@ -36,9 +35,17 @@ export const updateAgentStatus = async ({
   }
 };
 
-// Extend the ModelMessage type with Slack-specific metadata to identify multiple users in the same thread
+// Slack-specific metadata carried alongside each message for multi-user thread context
+export type SlackMessageMeta = {
+  user: string | null;
+  bot_id: string | null;
+  ts?: string;
+  thread_ts?: string;
+  type?: string;
+};
+
 export type SlackUIMessage = ModelMessage & {
-  metadata?: MessageElement;
+  metadata?: SlackMessageMeta;
 };
 
 const getThreadContext = async (
@@ -60,17 +67,17 @@ export const getThreadContextAsModelMessage = async (
     const { bot_id, text, user, ts, thread_ts, type } = message;
     // If botId provided, match exactly; otherwise treat any bot message as assistant
     const isAssistant = botId ? bot_id === botId : !!bot_id;
-    return {
-      role: isAssistant ? "assistant" : "user",
-      content: text,
-      metadata: {
-        user: user || null,
-        bot_id: bot_id || null,
-        ts,
-        thread_ts,
-        type,
-      },
+    const metadata = {
+      user: user || null,
+      bot_id: bot_id || null,
+      ts,
+      thread_ts,
+      type,
     };
+    if (isAssistant) {
+      return { role: "assistant" as const, content: text ?? "", metadata };
+    }
+    return { role: "user" as const, content: text ?? "", metadata };
   });
 };
 
@@ -92,17 +99,17 @@ export const getChannelContextAsModelMessage = async (
     const { bot_id, text, user, ts, thread_ts, type } = message;
     // If botId provided, match exactly; otherwise treat any bot message as assistant
     const isAssistant = botId ? bot_id === botId : !!bot_id;
-    return {
-      role: isAssistant ? "assistant" : "user",
-      content: text,
-      metadata: {
-        user: user || null,
-        bot_id: bot_id || null,
-        ts,
-        thread_ts,
-        type,
-      },
+    const metadata = {
+      user: user || null,
+      bot_id: bot_id || null,
+      ts,
+      thread_ts,
+      type,
     };
+    if (isAssistant) {
+      return { role: "assistant" as const, content: text ?? "", metadata };
+    }
+    return { role: "user" as const, content: text ?? "", metadata };
   });
 };
 

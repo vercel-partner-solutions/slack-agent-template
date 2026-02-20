@@ -1,7 +1,9 @@
-// https://nitro.unjs.io/guide/typescript
 {
-  "extends": "./.nitro/types/tsconfig.json",
+  "extends": ["nitro/tsconfig"],
   "compilerOptions": {
+    "paths": {
+      "~/*": ["./server/*"]
+    },
     "plugins": [
       {
         "name": "workflow"
