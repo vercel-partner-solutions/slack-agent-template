@@ -5,7 +5,7 @@
   "author": "Matthew Lewis",
   "license": "MIT",
   "scripts": {
-    "build": "vercel-slack build --debug & nitro build",
+    "build": "vercel-slack build --debug && nitro build",
     "dev": "nitro dev",
     "dev:tunnel": "tsx scripts/dev.tunnel.ts",
     "configure": "tsx scripts/configure.ts",
