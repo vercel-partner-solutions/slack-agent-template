@@ -17,6 +17,7 @@ const app = new App({
   deferInitialization: true,
   logLevel,
   installationStore,
+  stateSecret: process.env.SLACK_STATE_SECRET,
   authorize: installer.authorize,
   ignoreSelf: true,
 });
