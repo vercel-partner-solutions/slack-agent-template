@@ -11,7 +11,8 @@ const installer = new InstallProvider({
   installationStore,
   installUrlOptions: {
     scopes: manifest.oauth_config.scopes.bot,
-    userScopes: ["identity.basic"],
+    // @ts-expect-error - user scopes are not defined in the manifest
+    userScopes: manifest.oauth_config.scopes.user,
     redirectUri: manifest.oauth_config.redirect_urls[0],
   },
 });
