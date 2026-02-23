@@ -103,7 +103,7 @@ export const installationStore = {
       const row = await db
         .select()
         .from(slackWorkspaces)
-        .innerJoin(
+        .leftJoin(
           slackUserInstallations,
           and(
             eq(slackUserInstallations.workspaceId, slackWorkspaces.id),
@@ -122,7 +122,7 @@ export const installationStore = {
 
       return buildInstallation(
         row.slack_workspaces,
-        row.slack_user_installations,
+        row.slack_user_installations ?? null,
       );
     }
 
