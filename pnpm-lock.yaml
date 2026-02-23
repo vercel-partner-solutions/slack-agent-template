@@ -21,8 +21,8 @@ importers:
         specifier: ^7.13.0
         version: 7.13.0
       '@vercel/slack-bolt':
-        specifier: 1.2.0-canary.20260210195022.2e22609
-        version: 1.2.0-canary.20260210195022.2e22609(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.966.0))(@slack/bolt@4.6.0(@types/express@5.0.3))
+        specifier: file:./vercel-slack-bolt-1.1.0.tgz
+        version: file:vercel-slack-bolt-1.1.0.tgz(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.966.0))(@slack/bolt@4.6.0(@types/express@5.0.3))
       '@workflow/ai':
         specifier: 4.0.1-beta.44
         version: 4.0.1-beta.44(ai@6.0.27(zod@4.3.5))(workflow@4.0.1-beta.44(@aws-sdk/client-sts@3.966.0)(@opentelemetry/api@1.9.0)(magicast@0.5.1)(next@16.0.10(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))
@@ -1927,8 +1927,9 @@ packages:
     resolution: {integrity: sha512-62zJex3h5+XypoLGfnVpi7wZ7tEY2SyTXu/1ubnGzWgFKRCa+4Jr5w4ZDQWlIHu+iT+MDr2ExeU/qyInu3jqNA==}
     hasBin: true
 
-  '@vercel/slack-bolt@1.2.0-canary.20260210195022.2e22609':
-    resolution: {integrity: sha512-w67vpzxbgiU6nFs2J569o5oZS4iFBAZY6Tz+L1wp8xKPWRb064BnOuolS/iBnqQ8PE40EBf4KuulveFXBVH1eg==}
+  '@vercel/slack-bolt@file:vercel-slack-bolt-1.1.0.tgz':
+    resolution: {integrity: sha512-8I+efJBss703vKRHLwqnQ+LJ3MGLyenj48U/T8+0lK1Yo3A/aYNdtc59AwiqhdfQti6OqtBLkOo6SxhlMi/acA==, tarball: file:vercel-slack-bolt-1.1.0.tgz}
+    version: 1.1.0
     engines: {node: '>=20.0.0'}
     hasBin: true
     peerDependencies:
@@ -6350,7 +6351,7 @@ snapshots:
       - '@cfworker/json-schema'
       - supports-color
 
-  '@vercel/slack-bolt@1.2.0-canary.20260210195022.2e22609(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.966.0))(@slack/bolt@4.6.0(@types/express@5.0.3))':
+  '@vercel/slack-bolt@file:vercel-slack-bolt-1.1.0.tgz(@aws-sdk/credential-provider-web-identity@3.609.0(@aws-sdk/client-sts@3.966.0))(@slack/bolt@4.6.0(@types/express@5.0.3))':
     dependencies:
       '@slack/bolt': 4.6.0(@types/express@5.0.3)
       '@slack/logger': 4.0.0
