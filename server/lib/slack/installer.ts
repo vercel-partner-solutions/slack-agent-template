@@ -12,7 +12,7 @@ const installer = new InstallProvider({
   installUrlOptions: {
     scopes: manifest.oauth_config.scopes.bot,
     userScopes: ["identity.basic"],
-    redirectUri: manifest.oauth_config.redirect_uris[0],
+    redirectUri: manifest.oauth_config.redirect_urls[0],
   },
 });
 
