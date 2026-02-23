@@ -48,7 +48,8 @@
         "reactions:write",
         "channels:join"
       ]
-    }
+    },
+    "redirect_uris": ["https://your-app-domain.com/slack/callback"]
   },
   "settings": {
     "event_subscriptions": {
