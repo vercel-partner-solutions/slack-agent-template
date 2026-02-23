@@ -23,7 +23,7 @@
     "@slack/bolt": "^4.6.0",
     "@slack/oauth": "^3.0.4",
     "@slack/web-api": "^7.13.0",
-    "@vercel/slack-bolt": "file:./vercel-slack-bolt.tgz",
+    "@vercel/slack-bolt": "file:./vercel-slack-bolt-1.1.0.tgz",
     "@workflow/ai": "4.0.1-beta.44",
     "ai": "^6.0.27",
     "drizzle-orm": "^0.45.1",
