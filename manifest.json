@@ -49,7 +49,7 @@
         "channels:join"
       ]
     },
-    "redirect_uris": [
+    "redirect_urls": [
       "https://slack-agent-template.labs.vercel.dev/slack/callback"
     ]
   },
