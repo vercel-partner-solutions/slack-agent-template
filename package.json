@@ -5,7 +5,7 @@
   "author": "Matthew Lewis",
   "license": "MIT",
   "scripts": {
-    "build": "nitro build",
+    "build": "vercel-slack build & nitro build",
     "dev": "nitro dev",
     "dev:tunnel": "tsx scripts/dev.tunnel.ts",
     "configure": "tsx scripts/configure.ts",
@@ -22,7 +22,7 @@
     "@slack/bolt": "^4.6.0",
     "@slack/oauth": "^3.0.4",
     "@slack/web-api": "^7.13.0",
-    "@vercel/slack-bolt": "latest",
+    "@vercel/slack-bolt": "1.2.0-canary.20260210195022.2e22609",
     "@workflow/ai": "4.0.1-beta.44",
     "ai": "^6.0.27",
     "drizzle-orm": "^0.45.1",
