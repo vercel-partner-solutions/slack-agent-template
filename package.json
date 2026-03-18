@@ -19,9 +19,9 @@
     "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.13.0",
     "@vercel/slack-bolt": "latest",
-    "@workflow/ai": "4.0.1-beta.44",
+    "@workflow/ai": "4.1.0-beta.57",
     "ai": "^6.0.27",
-    "workflow": "4.0.1-beta.44",
+    "workflow": "4.2.0-beta.71",
     "zod": "^4.3.5"
   },
   "devDependencies": {
