@@ -1,0 +1,2 @@
+ALTER TABLE "slack_workspaces" ADD CONSTRAINT "slack_workspaces_team_id_unique" UNIQUE("team_id");--> statement-breakpoint
+ALTER TABLE "slack_workspaces" ADD CONSTRAINT "slack_workspaces_enterprise_id_unique" UNIQUE("enterprise_id");
